@@ -7,7 +7,13 @@ bibliography: Wädenswil.bib
 ---
 Understanding the full genomic potential within a microbial community is key to comprehend the biological/functional abilities of this specific meta community. Virulence, Resistence aswell as specific functions/phenotypes are likely dependend on specific aquired features which might not be present in reference genomes.
 
-Knowning the composition of microbial communities is the basis for understanding interactions therein. Interactions between organisms can quickly become very complex. Therefore understanding the general patterns in lower complexity assemblages should enable a crucial insight into all different microbial interactions. As most functional asseys rely on a well sequenced and annotated genome, genome assembly and annotation is key for downstream analysis. Sofar most analysis aiming at understand micbrobial compostion have used a targeted amplicon approach. However to rely understand the specific species and intra-species diversity a shotgun whole genome sequencing of the metagenome should be considered. The most recent improvments in third generation sequencing enable sofar unprecedented oppurtunities to sequence entire metagenomes of low complexity communities. 
+Knowning the composition of microbial communities is the basis for understanding interactions therein. Interactions between organisms can quickly become very complex. Therefore understanding the general patterns in lower complexity assemblages should enable a crucial insight into all different microbial interactions. As most functional asseys rely on a well sequenced and annotated genome, genome assembly and annotation is key for downstream analysis. Sofar most analysis aiming at understand micbrobial compostion have used a targeted amplicon approach. 
+
+However there are well known limitations including biases introduced by copy-number variations [@Klappenbach2001], variability in amplification efficiency [@Engelbrektson2010], inconsistencies when targeting different regions of this gene [@Claesson2010], and problems with accurately and consistently delineating prokaryotic species[@Gevers2005].
+
+Therefor to truely understand the specific species and intra-species diversity shotgun whole genome sequencing of the metagenome should be considered. The most recent improvments in third generation sequencing enable sofar unprecedented oppurtunities to sequence entire metagenomes of low complexity communities. 
+
+Additonally to the taxonomic profiling whole metagenome sequencing has further advantages in the gene functional analysis [@Qin2012,@Forslund2013] aswell as the genomic variation analysis [@Sunagawa2013]
 
 ##advantages and difficulties of long read sequencing on solving metagenomes
 
@@ -29,9 +35,12 @@ Knowning the organsims within a community is often the first and for many studie
 Apart from a phylogenetic survey of the microbial communities the shotgun metagenomic approach enables the de novo assembly of the dominant species which was sofar mainly restricted to cultureable species.  Thereby enabling the analysis of structural variation, genomic linkage of functions to specific genes and organisms and building the necassary basis for further omics analysis of this microbial community. In future with studies including multiple replicates the theoretical understanding of microbial communities could change to a core metagenome approach idenpednent of specific organsims but rather on the basis of occuring genes or functions.
 
 ##Obtions for species and strain profiling
-1. Metaphlan2: enables the profiling based on the specific marker genes computed from the constantly updated prokaryotic Refseqdatabase.
+1. Metaphlan2: enables the profiling based on the clade-specific-marker genes(genes computed from the constantly updated prokaryotic Refseqdatabase [@Segata2013].
+2. mOTU: based on universal, single-copy marker genes which provide prokaryotic species boundaries at higher resolution than 16SrRNA [@Sunagawa2013]
 
-We have ran two Fettsirte on one Sequel run each. One Fettsirte is called Cottens and has approxamatly 2 Mio. reads. the second Fettsirte is called LaPraz and has approxamatly 5 Mio. reads. 
+##Our study setup
+
+We have ran two Fettsirte on one Sequel run each. These Fettsirte originate from the Gruyere cheese production in Switzerland. One Fettsirte is called Cottens and has approxamatly 2 Mio. reads. the second Fettsirte is called LaPraz and has approxamatly 5 Mio. reads. 
 
 ####Set global options and bash shortcuts
 

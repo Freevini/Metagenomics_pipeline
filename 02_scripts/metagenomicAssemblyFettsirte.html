@@ -123,7 +123,10 @@ $(document).ready(function () {
 
 
 <p>Understanding the full genomic potential within a microbial community is key to comprehend the biological/functional abilities of this specific meta community. Virulence, Resistence aswell as specific functions/phenotypes are likely dependend on specific aquired features which might not be present in reference genomes.</p>
-<p>Knowning the composition of microbial communities is the basis for understanding interactions therein. Interactions between organisms can quickly become very complex. Therefore understanding the general patterns in lower complexity assemblages should enable a crucial insight into all different microbial interactions. As most functional asseys rely on a well sequenced and annotated genome, genome assembly and annotation is key for downstream analysis. Sofar most analysis aiming at understand micbrobial compostion have used a targeted amplicon approach. However to rely understand the specific species and intra-species diversity a shotgun whole genome sequencing of the metagenome should be considered. The most recent improvments in third generation sequencing enable sofar unprecedented oppurtunities to sequence entire metagenomes of low complexity communities.</p>
+<p>Knowning the composition of microbial communities is the basis for understanding interactions therein. Interactions between organisms can quickly become very complex. Therefore understanding the general patterns in lower complexity assemblages should enable a crucial insight into all different microbial interactions. As most functional asseys rely on a well sequenced and annotated genome, genome assembly and annotation is key for downstream analysis. Sofar most analysis aiming at understand micbrobial compostion have used a targeted amplicon approach.</p>
+<p>However there are well known limitations including biases introduced by copy-number variations <span class="citation">(Klappenbach 2001)</span>, variability in amplification efficiency <span class="citation">(Engelbrektson et al. 2010)</span>, inconsistencies when targeting different regions of this gene <span class="citation">(Claesson et al. 2010)</span>, and problems with accurately and consistently delineating prokaryotic species<span class="citation">(Gevers et al. 2005)</span>.</p>
+<p>Therefor to truely understand the specific species and intra-species diversity shotgun whole genome sequencing of the metagenome should be considered. The most recent improvments in third generation sequencing enable sofar unprecedented oppurtunities to sequence entire metagenomes of low complexity communities.</p>
+<p>Additonally to the taxonomic profiling whole metagenome sequencing has further advantages in the gene functional analysis <span class="citation">(J. Qin et al. 2012,<span class="citation">Forslund et al. (2013)</span>)</span> aswell as the genomic variation analysis <span class="citation">(Sunagawa et al. 2013)</span></p>
 <div id="advantages-and-difficulties-of-long-read-sequencing-on-solving-metagenomes" class="section level2">
 <h2>advantages and difficulties of long read sequencing on solving metagenomes</h2>
 <p>Ongoing improvements of both Pacbio (RSII and Sequel) as well as Nanopore (Miniion and Promethion) for increased read length, higher throughput and read quality have changed the field of whole genome sequencing. Assembling complete circularized genomes is becoming a standard. It is well known that for completely assembling a genome the sequencing reads need to span the longest intragenomic repeat region <span class="citation">(Olson et al. 2017)</span>. For metagenomic assemblies the reads however not only have to span intragenomic repeats but also intergenomic repeats. An intergenomic repeat is a homological sequence between two or more co-occurring organism. These repeats are not generally of low complexity but can also be of low divergence and therefore are intrinsically indistinguishable. These repeats can be resolved by either spanning the repeat with long sequences to anchor within unique flanking regions or by increased sequencing quality whereby genomes can be discriminated solely based on subtle differences.</p>
@@ -140,28 +143,16 @@ $(document).ready(function () {
 <div id="obtions-for-species-and-strain-profiling" class="section level2">
 <h2>Obtions for species and strain profiling</h2>
 <ol style="list-style-type: decimal">
-<li>Metaphlan2: enables the profiling based on the specific marker genes computed from the constantly updated prokaryotic Refseqdatabase.</li>
+<li>Metaphlan2: enables the profiling based on the clade-specific-marker genes(genes computed from the constantly updated prokaryotic Refseqdatabase <span class="citation">(Segata et al. 2013)</span>.</li>
+<li>mOTU: based on universal, single-copy marker genes which provide prokaryotic species boundaries at higher resolution than 16SrRNA <span class="citation">(Sunagawa et al. 2013)</span></li>
 </ol>
-<p>We have ran two Fettsirte on one Sequel run each. One Fettsirte is called Cottens and has approxamatly 2 Mio. reads. the second Fettsirte is called LaPraz and has approxamatly 5 Mio. reads.</p>
+</div>
+<div id="our-study-setup" class="section level2">
+<h2>Our study setup</h2>
+<p>We have ran two Fettsirte on one Sequel run each. These Fettsirte originate from the Gruyere cheese production in Switzerland. One Fettsirte is called Cottens and has approxamatly 2 Mio. reads. the second Fettsirte is called LaPraz and has approxamatly 5 Mio. reads.</p>
 <div id="set-global-options-and-bash-shortcuts" class="section level4">
 <h4>Set global options and bash shortcuts</h4>
 <pre class="r"><code>knitr::opts_chunk$set(fig.width=12, fig.height=8,warning=FALSE, message=FALSE)</code></pre>
-<pre class="bash"><code>
-###==========================
-##locations
-###==========================
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23
-echo $DATA_ROOT
-</code></pre>
-<pre><code>## /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109</code></pre>
-<pre class="bash"><code>echo $DATA_ROOT</code></pre>
 </div>
 </div>
 <div id="sequencing-stats" class="section level2">
@@ -1542,11 +1533,35 @@ for name in cottens lapraz
    done     
 </code></pre>
 <div id="refs" class="references">
+<div id="ref-Claesson2010">
+<p>Claesson, Marcus J., Qiong Wang, Orla O’Sullivan, Rachel Greene-Diniz, James R. Cole, R. Paul Ross, and Paul W. O’Toole. 2010. “Comparison of two next-generation sequencing technologies for resolving highly complex microbiota composition using tandem variable 16S rRNA gene regions.” <em>Nucleic Acids Research</em> 38 (22). doi:<a href="https://doi.org/10.1093/nar/gkq873">10.1093/nar/gkq873</a>.</p>
+</div>
 <div id="ref-Driscoll2017">
 <p>Driscoll, Connor B., Timothy G. Otten, Nathan M. Brown, and Theo W. Dreher. 2017. “Towards long-read metagenomics: complete assembly of three novel genomes from bacteria dependent on a diazotrophic cyanobacterium in a freshwater lake co-culture.” <em>Standards in Genomic Sciences</em> 12 (1). Standards in Genomic Sciences: 9. doi:<a href="https://doi.org/10.1186/s40793-017-0224-8">10.1186/s40793-017-0224-8</a>.</p>
 </div>
+<div id="ref-Engelbrektson2010">
+<p>Engelbrektson, Anna, Victor Kunin, Kelly C. Wrighton, Natasha Zvenigorodsky, Feng Chen, Howard Ochman, and Philip Hugenholtz. 2010. “Experimental factors affecting PCR-based estimates of microbial species richness and evenness.” <em>ISME Journal</em> 4 (5). Nature Publishing Group: 642–47. doi:<a href="https://doi.org/10.1038/ismej.2009.153">10.1038/ismej.2009.153</a>.</p>
+</div>
+<div id="ref-Forslund2013">
+<p>Forslund, Kristoffer, Shinichi Sunagawa, Jens Roat Kultima, Daniel R Mende, Manimozhiyan Arumugam, Athanasios Typas, and Peer Bork. 2013. “Country-specific antibiotic use practices impact the human gut resistome.” <em>Genome</em> 23: 1163–9. doi:<a href="https://doi.org/10.1101/gr.155465.113.23">10.1101/gr.155465.113.23</a>.</p>
+</div>
+<div id="ref-Gevers2005">
+<p>Gevers, Dirk, Frederick M. Cohan, Jeffrey G. Lawrence, Brian G. Spratt, Tom Coenye, Edward J. Feil, Erko Stackebrandt, et al. 2005. “Re-evaluating prokaryotic species.” <em>Nature Reviews Microbiology</em> 3 (9): 733–39. doi:<a href="https://doi.org/10.1038/nrmicro1236">10.1038/nrmicro1236</a>.</p>
+</div>
+<div id="ref-Klappenbach2001">
+<p>Klappenbach, J. A. 2001. “rrndb: the Ribosomal RNA Operon Copy Number Database.” <em>Nucleic Acids Research</em> 29 (1): 181–84. doi:<a href="https://doi.org/10.1093/nar/29.1.181">10.1093/nar/29.1.181</a>.</p>
+</div>
 <div id="ref-Olson2017">
 <p>Olson, Nathan D., Todd J. Treangen, Christopher M. Hill, Victoria Cepeda-Espinoza, Jay Ghurye, Sergey Koren, and Mihai Pop. 2017. “Metagenomic assembly through the lens of validation: recent advances in assessing and improving the quality of genomes assembled from metagenomes.” <em>Briefings in Bioinformatics</em>, no. November: 1–11. doi:<a href="https://doi.org/10.1093/bib/bbx098">10.1093/bib/bbx098</a>.</p>
+</div>
+<div id="ref-Qin2012">
+<p>Qin, Junjie, Yingrui Li, Zhiming Cai, Shenghui Li, Jianfeng Zhu, Fan Zhang, Suisha Liang, et al. 2012. “A metagenome-wide association study of gut microbiota in type 2 diabetes.” <em>Nature</em> 490 (7418). Nature Publishing Group: 55–60. doi:<a href="https://doi.org/10.1038/nature11450">10.1038/nature11450</a>.</p>
+</div>
+<div id="ref-Segata2013">
+<p>Segata, Nicola, Daniela Boernigen, Timothy L. Tickle, Xochitl C. Morgan, Wendy S. Garrett, and Curtis Huttenhower. 2013. “Computational meta’omics for microbial community studies.” <em>Molecular Systems Biology</em> 9 (1). Nature Publishing Group: 1–15. doi:<a href="https://doi.org/10.1038/msb.2013.22">10.1038/msb.2013.22</a>.</p>
+</div>
+<div id="ref-Sunagawa2013">
+<p>Sunagawa, Shinichi, Daniel R. Mende, Georg Zeller, Fernando Izquierdo-Carrasco, Simon A. Berger, Jens Roat Kultima, Luis Pedro Coelho, et al. 2013. “Metagenomic species profiling using universal phylogenetic marker genes.” <em>Nature Methods</em> 10 (12): 1196–9. doi:<a href="https://doi.org/10.1038/nmeth.2693">10.1038/nmeth.2693</a>.</p>
 </div>
 </div>
 </div>
