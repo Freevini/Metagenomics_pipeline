@@ -1,0 +1,1514 @@
+---
+title: "MetagenomicAssemblyFettsirte"
+output:
+  html_document: default
+  html_notebook: default
+bibliography: Wädenswil.bib
+---
+Understanding the full genomic potential within a microbial community is key to comprehend the biological/functional abilities of this specific meta community. Virulence, Resistence aswell as specific functions/phenotypes are likely dependend on specific aquired features which might not be present in reference genomes.
+
+Knowning the composition of microbial communities is the basis for understanding interactions therein. Interactions between organisms can quickly become very complex. Therefore understanding the general patterns in lower complexity assemblages should enable a crucial insight into all different microbial interactions. As most functional asseys rely on a well sequenced and annotated genome, genome assembly and annotation is key for downstream analysis. Sofar most analysis aiming at understand micbrobial compostion have used a targeted amplicon approach. However to rely understand the specific species and intra-species diversity a shotgun whole genome sequencing of the metagenome should be considered. The most recent improvments in third generation sequencing enable sofar unprecedented oppurtunities to sequence entire metagenomes of low complexity communities. 
+
+##advantages and difficulties of long read sequencing on solving metagenomes
+
+Ongoing improvements of both Pacbio (RSII and Sequel) as well as Nanopore (Miniion and Promethion) for increased read length, higher throughput and read quality have changed the field of whole genome sequencing. Assembling complete circularized genomes is becoming a standard. It is well known that for completely assembling a genome the sequencing reads need to span the longest intragenomic repeat region [@Olson2017]. For metagenomic assemblies the reads however not only have to span intragenomic repeats but also intergenomic repeats. An intergenomic repeat is a homological sequence between two or more co-occurring organism. These repeats are not generally of low complexity but can also be of low divergence and therefore are intrinsically indistinguishable. These repeats can be resolved by either spanning the repeat with long sequences to anchor within unique flanking regions or by increased sequencing quality whereby genomes can be discriminated solely based on subtle differences.
+
+##Advantages of whole genome metagenomics in comparison to targeted amplicon sequencing of communities.
+Sequencing the entire DNA potential within the environment of interest has multiple advantages.
+1. No PCR biases due to different binding abilities of the primers to different sequences.
+2. Better resolution to identifing higher order taxonomical differences. For exmaple in pinpointing strain levela or resistence. Like antibiotic restistance. 
+3. ability to indentify core metagenomes if multiple treatments and multiple replicates. 
+4. possibility to identifiy treatment specific metagenomes
+5. functional annotation of sequencing data and implications of genotype/genes on phenotype
+6.Fundamental basis for all further 'omic analysis and functional analysis of specific environment. 
+7. Without complete genomes of the specific strains, studies are limited to the study of targeted genes or SNPs. Final ability to study large structural variation (relocations and horizontal gene transfer), which potentially have sofar unprecedented effects on the phenotype. 
+
+##1. Taxon profiling from metagenomic data
+Knowning the organsims within a community is often the first and for many studies the most important information. For shotgun metagenome studies this is often done before assembling the sequencing data, as only the most abundant species can be de novo assembled [@Driscoll2017]. The key advantage of the metagenomic approach over a targeted amplicon approach is mainly the high resolution. A palette of different methods have enabled to profile strain level diversity from metagenomic data. However this approach is often limited to the thoroughness of the sequence database.
+
+Apart from a phylogenetic survey of the microbial communities the shotgun metagenomic approach enables the de novo assembly of the dominant species which was sofar mainly restricted to cultureable species.  Thereby enabling the analysis of structural variation, genomic linkage of functions to specific genes and organisms and building the necassary basis for further omics analysis of this microbial community. In future with studies including multiple replicates the theoretical understanding of microbial communities could change to a core metagenome approach idenpednent of specific organsims but rather on the basis of occuring genes or functions.
+
+##Obtions for species and strain profiling
+1. Metaphlan2: enables the profiling based on the specific marker genes computed from the constantly updated prokaryotic Refseqdatabase.
+
+We have ran two Fettsirte on one Sequel run each. One Fettsirte is called Cottens and has approxamatly 2 Mio. reads. the second Fettsirte is called LaPraz and has approxamatly 5 Mio. reads. 
+
+####Set global options and bash shortcuts
+
+```{r global_options}
+knitr::opts_chunk$set(fig.width=12, fig.height=8,warning=FALSE, message=FALSE)
+```
+
+
+##Sequencing stats
+The sequencing stats were obtained from the standard ouptut file of SMRTlink and are as following:
+
+
+```{r packages, warning=FALSE, echo=FALSE}
+
+.libPaths("/home/bioinf/bioinf_data/43_sovi/R/")
+
+suppressPackageStartupMessages(library("ggplot2"))
+suppressPackageStartupMessages(library("rjson"))
+suppressPackageStartupMessages(library("knitr"))
+#source("https://bioconductor.org/biocLite.R")
+#suppressPackageStartupMessages(library("Repitools"))
+suppressPackageStartupMessages(library("curatedMetagenomicData"))
+suppressPackageStartupMessages(library("fastqcr"))
+suppressPackageStartupMessages(library("readr"))
+suppressPackageStartupMessages(library("dplyr"))
+
+
+# biocLite("curatedMetagenomicData")
+# biocLite("fastqcr")
+```
+
+make FASTQC
+```{bash fastqc , warning=FALSE, echo=FALSE,eval=FALSE}
+for name in cottens lapraz
+   do
+    #mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/fastqc/unzipped
+    #fastqc $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq -t 8 -o $DATA_ROOT/01_SMRTlink_data/${name}/fastqc
+    #sed -n '1~4s/^@/>/p;2~4p' $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq > $DATA_ROOT/01_SMRTlink_data/${name}/reads.fasta
+    seq_length.py $DATA_ROOT/01_SMRTlink_data/${name}/reads.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/seq_length.ttxt
+   done
+```
+
+
+```{r stats, warning=FALSE}
+##----------
+##fastqc
+##----------
+fastqc_cottens <- qc_read("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/01_SMRTlink_data/cottens/fastqc/reads_fastqc.zip")
+fastqc_lapraz <- qc_read("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/01_SMRTlink_data/lapraz/fastqc/reads_fastqc.zip")
+
+seq_length_cottens <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/01_SMRTlink_data/cottens/seq_length.ttxt", "\t", escape_double = FALSE, col_names = c("read","length"), trim_ws = TRUE)
+
+seq_length_lapraz <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/01_SMRTlink_data/lapraz/seq_length.ttxt", "\t", escape_double = FALSE, col_names = c("read","length"), trim_ws = TRUE)
+
+for(i in c("cottens","lapraz")){
+nam <- paste("readlength_distribution_",i,sep="")
+nam_2 <- paste("fastqc_",i,sep="")
+nam_3 <- paste("seq_length_",i,sep="")
+
+#assign(nam,setNames(as.vector(unlist(get(nam_2)$sequence_length_distribution[,2])),as.vector(unlist(get(nam_2)$sequence_length_distribution[,1]))))
+#barplot(height =get(nam),las=2,main = nam)
+
+ggplot(get(nam_3),aes(x=length))+geom_histogram(binwidth = 500)+theme_light()+labs(title=nam_3)
+
+sizethreshold<- 7000
+print(c("There are:",sum(get(nam_3)[,2]>sizethreshold),"reads larger than",sizethreshold,"for",i))
+}
+
+##make a stats output 
+
+
+json_file <- "../04_HGAP4/20171114assembly_lapraz/stats/mapping_stats_hgap.json"
+general_stats_1 <- fromJSON(file=json_file)
+
+json_file <- "../04_HGAP4/20171114assembly_cottens//stats/mapping_stats_hgap.json"
+general_stats_2 <- fromJSON(file=json_file)
+
+##create table
+
+total_seq_bases_1 <- round((general_stats_1$attributes[[4]]$value)/(general_stats_1$attributes[[2]]$value*100)*100)
+total_seq_bases_2 <- round((general_stats_2$attributes[[4]]$value)/(general_stats_2$attributes[[2]]$value*100)*100)
+
+
+
+stats_table <- data.frame("total Seq bases"=c(total_seq_bases_1,total_seq_bases_2),
+                          "percent mapped bases"=c(general_stats_1$attributes[[1]]$value,general_stats_2$attributes[[1]]$value),
+                          "number of subread"=c(general_stats_1$attributes[[3]]$value,general_stats_2$attributes[[3]]$value),
+                          "number of subreads bases (realigned)"=c(general_stats_1$attributes[[3]]$value,general_stats_2$attributes[[3]]$value),
+                          "Subread Length Mean"=c(general_stats_1$attributes[[5]]$value,general_stats_2$attributes[[5]]$value),
+                          "Subread Length N50"=c(general_stats_1$attributes[[6]]$value,general_stats_2$attributes[[6]]$value),
+                          "Subread Length Max"=c(general_stats_1$attributes[[8]]$value,general_stats_2$attributes[[8]]$value)
+                          )
+rownames(stats_table) <- c("lapraz","cottens")
+knitr::kable(stats_table)
+```
+
+#Assemblies
+The subreads are then used to assemble the genomes. In this point lies the major advantage of long reads. Long reads enable the spanning of repeat regions. In general long read assemblers consist of a Overlap Layout Consensus (OLC) algorithm. 
+
+In the following we try different assemblers. 
+
+##HGAP4
+HGAP4 is the pacbio assembler implemented in SMRTlink 5.0. In the prelimary analysis based on the three Lactobacillus helveticus strains HGAP4 showed the best performance (precision and recall) for metagenome data. the HGAP4 assembly was run on default with an expected overall genome size of 10Mb.
+This was done in the SMRTlink GUI.
+
+```{bash hgap4_circularity, eval =F}
+###==========================
+##locations
+###==========================
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23
+
+###==========================
+##check circularity
+###==========================
+for name in cottens lapraz
+  do 
+    mkdir -p $DATA_ROOT/04_HGAP4/20171114assembly_${name}/fasta/multifasta
+    $sprai_root/check_circularity.pl $DATA_ROOT/04_HGAP4/20171114assembly_${name}/fasta/assembly.fasta $DATA_ROOT/04_HGAP4/20171114assembly_${name}/fasta/multifasta --force > $DATA_ROOT/04_HGAP4/20171114assembly_${name}/fasta/cirularity.txt
+  done
+
+
+```
+
+
+##Abruijn
+Abruijn is an assembler from the Pevzner lab that has shown to be very efficient and easy to use with different kinds of sequencing date. 
+```{bash abruijn , warning=F, eval=F}
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+circular_root=/home/bioinf/extradrv/identifyCircularContigs-master
+bbmap_root=/opt/Geneious/bundledPlugins/com.biomatters.plugins.bbtools.BBToolsPlugin/com/biomatters/plugins/bbtools/BBMap_37.25/bbmap/
+
+##---------------
+##extract raw data
+##---------------
+for name in cottens lapraz
+   do
+     tar -zxvf $DATA_ROOT/01_SMRTlink_data/${name}/reads.tar.gz -C $DATA_ROOT/01_SMRTlink_data/${name}/
+   done
+
+date=$(date +%Y%m%d)
+##---------------
+##creat abruijn directories
+##---------------
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/05_abruijn/${date}assembly_${name}/{quast,fasta}
+   done
+##---------------
+##abruijn assembly with ALL subreads
+##---------------
+cov=100
+for name in cottens lapraz
+  do
+    $abruijn_root/abruijn -t 12 $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq $DATA_ROOT/05_abruijn/assembly_${name}/fasta ${cov} -p pacbio -o 2500
+    cov=300
+  done
+
+for name in cottens lapraz
+   do
+    quast.py $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.fasta -t 8 -o $DATA_ROOT/05_abruijn/assembly_${name}/quast/
+   done
+
+
+##---------------
+##abruijn assembly with subreads > 5000bp
+##---------------
+for name in cottens lapraz
+  do
+    prinseq-lite.pl -fastq $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq -min_len 7000 -out_format 3 -out_good $DATA_ROOT/01_SMRTlink_data/${name}/reads_min5000bp  -out_bad null
+  done
+  
+cov=100
+for name in cottens lapraz
+  do
+    mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/{fasta,quast}
+    $abruijn_root/abruijn -t 10 $DATA_ROOT/01_SMRTlink_data/${name}/reads_min5000bp.fastq $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta ${cov} -p pacbio -o 2500
+    cov=300
+  done
+##quast
+for name in cottens lapraz
+   do
+    quast.py $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/polished_1.fasta -t 8 -o $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/quast/
+   done
+   
+##blast
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast
+     $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/polished_1.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast/blastAssembly.txt -evalue 0.01 -word_size 64
+   done   
+##---------------
+##abruijn assembly with polished reads (preassembly pacbio)
+##---------------
+
+  
+cov=100
+for name in cottens lapraz
+  do
+    mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}_preassembledReads/{fasta,quast}
+    $abruijn_root/abruijn -t 10 01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta $DATA_ROOT/05_abruijn/assembly_${name}_preassembledReads/fasta ${cov} -p pacbio -i 2 -o 2500
+    cov=300
+  done
+##quast
+for name in cottens lapraz
+   do
+    quast.py $DATA_ROOT/05_abruijn/assembly_${name}_preassembledReads/fasta/polished_1.fasta -t 8 -o $DATA_ROOT/05_abruijn/assembly_${name}_preassembledReads/quast/
+   done
+##blast
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}_preassembledReads/blast
+     $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/05_abruijn/assembly_${name}_preassembledReads/fasta/polished_1.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/05_abruijn/assembly_${name}_preassembledReads/blast/blastAssembly.txt -evalue 0.01 -word_size 64
+   done
+   
+###==========================
+##coverage
+###==========================  
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/coverage  
+    $bbmap_root/bbwrap.sh ref=$DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/polished_1.fasta 
+        $bbmap_root/bbwrap.sh ref=$DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/polished_1.fasta nodisk in=10 $DATA_ROOT/01_SMRTlink_data/${name}/reads_min5000bp.fastq out=$DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/coverage 
+  done
+
+
+```
+##Look at assembled contigs
+In the following we look at the assembled contigs
+
+
+
+```{bash assembly_check ,eval=FALSE}
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+
+for name in cottens lapraz
+   do
+#    numCon=${grep ">" $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/polished_1.fasta}
+    echo "The assembly of" ${name}:
+    cat $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast/blastAssembly.txt
+    
+   done
+
+```
+
+
+```{r assembly_check_inR ,message=FALSE ,warning=FALSE}
+##-----------
+##import files
+##-----------
+assembly_cottens <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/05_abruijn/assembly_cottens_min5000bp/blast/blastAssembly.txt", "\t", escape_double = FALSE, col_names = c("qseqid" ,"sseqid" ,"pident" ,"length" ,"mismatch", "gapopen", "qstart", "qend", "sstart", "send","evalue" ,"bitscore" ,"stitle"), trim_ws = TRUE)
+
+assembly_lapraz <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/05_abruijn/assembly_lapraz_min5000bp/blast/blastAssembly.txt", "\t", escape_double = FALSE, col_names = c("qseqid" ,"sseqid" ,"pident" ,"length" ,"mismatch", "gapopen", "qstart", "qend", "sstart", "send","evalue" ,"bitscore" ,"stitle"), trim_ws = TRUE)
+
+##-----------
+##add meta information
+##-----------
+for(i in c("cottens","lapraz")){
+    nam <- paste("assembly_",i,sep="")
+    name <-   data.frame(do.call('rbind',strsplit(get(nam)$qseqid, split = "_")))
+    colnames(name) <- c("circularity","number","contigLength","ContigCoverage")
+    assign(nam,cbind(get(nam),name))
+}
+##-----------
+##add meta information
+##-----------
+
+for(i in c("cottens","lapraz")){
+    nam <- paste("assembly_",i,sep="")
+    nam_2 <- paste("reduced_assembly_",i,sep="")
+    nam_2 <- as.data.frame(get(nam)) %>%
+    dplyr::select(qseqid, circularity, contigLength, ContigCoverage,bitscore,sseqid,stitle)
+    print(c("The Best hits for the ",i, "assembly are the following"))
+    kable(nam_2)
+}
+
+
+
+
+```
+
+
+##Minimap2 and Miniasm from Heng Li
+The recently developed Minimap2 (Mapper) amd Miniasm (overlaper) are much faster as all other methods. 
+```{bash minimap_miniams , warning=F, eval=F}
+###==========================
+##locations
+###==========================
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+###==========================
+##Minimap2 Overlap
+###==========================
+#$minimap2_root -x ava-pb $DATA_ROOT/01_cottens_min5000bp/reads.fastq > $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/cottens_minimap.paf
+
+for name in cottens lapraz
+  do      
+    mkdir -p $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp
+    mkdir -p $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/
+    $minimap2_root -x ava-pb $DATA_ROOT/01_${name}_min5000bp/reads.fastq > $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/${name}_minimap.paf
+  done
+###==========================
+##miniasm
+###==========================
+
+$miniasm_root/miniasm -f $DATA_ROOT/01_SMRTlink_data/01_cottens_min5000bp/reads.fastq $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/cottens_minimap.paf > $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113/cottens_minimap.gfa
+
+ for name in cottens lapraz
+  do      
+    mkdir -p $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113
+    /home/bioinf/extradrv/miniasm/miniasm -f $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads.fastq     $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/${name}_minimap.paf > $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113/cottens_minimap.gfa
+    awk '/^S/{print ">"$2"\n"$3}' $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113/${name}_minimap.gfa| fold > $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113/${name}_minimap.fa
+    done
+    
+
+
+```
+
+
+##Metaspades and megahit as a Debruijn assembler specifically for metagenomic datasets
+Although Debruijn assemblers are orignally meant for short and low error rate sequences we give it a try on the reads >5000bp.
+
+
+```{bash metaspades_megahit , warning=F, eval=F}
+
+###==========================
+##locations
+###==========================
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+bbmap_root=/opt/Geneious/bundledPlugins/com.biomatters.plugins.bbtools.BBToolsPlugin/com/biomatters/plugins/bbtools/BBMap_37.25/bbmap/
+
+###==========================
+##Metaspades
+###==========================
+
+ for name in cottens lapraz
+  do      
+    mkdir -p $DATA_ROOT/08_metaspades/20171127_assembly_${name}/{fasta,quast,blast}
+    metaspades -t 8 -o $DATA_ROOT/08_metaspades/20171127_assembly_${name}/fasta -s $DATA_ROOT/01_SMRTlink_data/${name}/reads_min5000bp.fastq
+  done
+
+###==========================
+##megahit
+###==========================
+ for name in cottens lapraz
+  do      
+    mkdir -p $DATA_ROOT/10_megahit/20171127_assembly_${name}/{fasta,quast,blast}
+    rm -r $DATA_ROOT/10_megahit/20171127_assembly_${name}/fasta
+    megahit -r $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta -o $DATA_ROOT/10_megahit/20171127_assembly_${name}/fasta -m 60996138188 -t 12 --presets meta-sensitive
+  done
+ 
+
+
+```
+Metaspades does not work for pacbio only data.
+
+##sprai error correction
+Sprai is able to do the error correction without assembly.
+
+```{bash sprai_error_cor ,eval=FALSE}
+###==========================
+##locations
+###==========================
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23
+
+###==========================
+##sprai
+###==========================
+ for name in cottens lapraz
+  do 
+    mkdir -p $DATA_ROOT/09_sprai/preassembly_${name}/fasta
+    #cp $sprai_root/ec.spec_${name} $DATA_ROOT/09_sprai/preassembly_${name}/
+    $sprai_root/ezez_vx1.pl $DATA_ROOT/09_sprai/preassembly_${name}/ec.spec_${name} -ec_only > log 2>&1 
+  done
+
+for name in cottens lapraz
+  do 
+    mkdir -p $DATA_ROOT/09_sprai/preassembly_${name}/fasta
+    $sprai_root/ezez4makefile_v4.pl $DATA_ROOT/09_sprai/preassembly_${name}/ec.spec_${name} 
+    sudo make -j 8 -f Makefile ec_only > log 2>&1 
+  done
+###==========================
+##check circularity
+###==========================
+for name in cottens lapraz
+  do 
+    $sprai_root/check_circularity.pl $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/polished_1.fasta $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/multifasta --force > $DATA_ROOT/05_abruijn/assembly_cottens/fasta/cirularity.txt
+  done
+  
+
+```
+
+##Blobology on preassemblies
+
+```{bash blobology_preassembly ,eval=FALSE}
+
+###==========================
+##locations
+###==========================
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23
+blob_root=/home/bioinf/extradrv/blobology
+
+###==========================
+##run blobology
+###==========================
+
+####==========================================================================
+#### GENERAL CONFIG VARIABLES
+####==========================================================================
+name=cottens
+
+NUMPROC=8
+KMER=61
+BLASTDB=$blastdb/all_prokaryotes
+TAXDUMP=$DATA_ROOT/
+ASSEMBLY=$DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta
+
+####==========================================================================
+#### STEP 2, find best blast hits of a random sample of contigs
+####==========================================================================
+blastn -task megablast -query $ASSEMBLY -db $BLASTDB -evalue 1e-5 -num_threads $NUMPROC -max_target_seqs 1 -outfmt '6 qseqid staxids' -out $ASSEMBLY.nt.1e-5.megablast
+
+bowtie2-build $ASSEMBLY $ASSEMBLY
+
+for LIBNAME in cottens lapraz
+do
+    bowtie2 -x $ASSEMBLY --very-fast-local -k 1 -t -p 12 --reorder --mm \
+        -U $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq \
+        | samtools view -S -b -T $ASSEMBLY - > $ASSEMBLY.$LIBNAME.bowtie2.bam
+done
+
+####==========================================================================
+#### STEP 4, combine BAM files and blast hits to create data file for plotting
+####==========================================================================
+
+
+$blob_root/gc_cov_annotate.pl \
+  --blasttaxid $ASSEMBLY.nt.1e-5.megablast \
+  --assembly $ASSEMBLY --bam *.bam --out blobplot.txt \
+  --taxdump $TAXDUMP --taxlist species order phylum superkingdom
+
+####==========================================================================
+#### STEP 4, create blobplots using R, or visualise using blobsplorer
+####==========================================================================
+
+$blob_root/makeblobplot.R blobplot.txt 0.01 taxlevel_order
+
+
+```
+
+##Nucmer to align different assemblies against eachother
+
+The large limitation in Assembling genomes as well as metagenomes is the ability to sequence larger than repeats. For a single genome this means the read length needs to be sufficiently long to span the largest repeat. However for metagenome assembly there is additonally to the intragenomic repeat a difficulty to dinstinguish inter genomic repeats [@Olson2017]. In order to look at the repeats
+
+```{bash nucmer ,eval=FALSE}
+###==========================
+##locations
+###==========================
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23
+blob_root=/home/bioinf/extradrv/blobology
+
+###==========================
+##combine delbruecki and streptococcus from lapraz abruijn assembly
+###==========================
+
+mkdir -p $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/{fasta,nucmer,deltaFiltered}
+
+cat $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/multifasta/linear_1_len1924117_cov316.fa $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/multifasta/linear_2_len2265372_cov167.fa > $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/fasta/reads.fa
+
+###==========================
+##nucmer
+###==========================
+cd $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/nucmer/
+nucmer -maxmatch -nosimplify $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/fasta/reads.fa $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/fasta/reads.fa 
+cd $DATA_ROOT
+
+###==========================
+##delta filter
+###==========================
+mkdir -p $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/{fasta,nucmer,deltaFiltered}
+delta-filter -i 85 -l 3000  $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/nucmer/out.delta > $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/deltaFiltered/filtered.txt
+##split files
+cd $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/deltaFiltered/
+split -t ">" -l 1 $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/deltaFiltered/filtered.txt
+cd $DATA_ROOT
+##extract only necassary files
+grep "[[:space:]]" $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/deltaFiltered/xac | awk 'BEGIN {OFS ="\t"} {print "Sterm" , $1 , $2 , "Ldel" , $3 , $4}' > $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/deltaFiltered/links.txt
+tail -1 $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/deltaFiltered/links.txt > $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/deltaFiltered/link.txt
+rm $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/deltaFiltered/links.txt
+
+###==========================
+##Lhev and Sterm repeats
+###==========================
+mkdir -p $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/{01_fasta,nucmer,deltaFiltered}
+cat $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/01_fasta/Lhev.fasta $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/multifasta/linear_1_len1924117_cov316.fa > $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/01_fasta/Lhev_Sterm.fasta
+##nucmer
+cd $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/nucmer/
+nucmer -maxmatch -nosimplify $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/01_fasta/Lhev_Sterm.fasta $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/01_fasta/Lhev_Sterm.fasta
+cd $DATA_ROOT
+##delta-filter
+delta-filter -i 85 -l 3000  $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/nucmer/out.delta >  $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/filtered.txt
+##split files
+cd $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm//deltaFiltered/
+split -t ">" -l 1 $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/filtered.txt
+cd $DATA_ROOT
+##extract only necassary files
+grep "[[:space:]]" $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/xac | awk 'BEGIN {OFS ="\t"} {print "Sterm" , $1 , $2 , "Lhev" , $3 , $4}' > $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/links.txt
+tail -1 $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/links.txt > $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/link.txt
+rm $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/links.txt
+##size of repeats
+awk '{print $3-$2}' $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/link.txt
+
+
+###==========================
+##Lhev and delbruecki repeats
+###==========================
+mkdir -p $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/{01_fasta,nucmer,deltaFiltered}
+cat $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/01_fasta/Lhev.fasta $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/multifasta/linear_2_len2265372_cov167.fa > $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/01_fasta/Lhev_del.fasta
+##nucmer
+cd $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/nucmer/
+nucmer -maxmatch -nosimplify $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/01_fasta/Lhev_del.fasta $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/01_fasta/Lhev_del.fasta
+cd $DATA_ROOT
+##delta-filter
+delta-filter -i 85 -l 3000  $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/nucmer/out.delta >  $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/filtered.txt
+##split files
+cd $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/
+split -t ">" -l 1 $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/filtered.txt
+cd $DATA_ROOT
+##extract only necassary files
+grep "[[:space:]]" $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/xac | awk 'BEGIN {OFS ="\t"} {print "Ldel" , $1 , $2 , "Lhev" , $3 , $4}' > $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/links.txt
+tail -1 $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/links.txt > $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/link.txt
+rm $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/links.txt
+
+###==========================
+##cat all three intergenomic repeat files together
+###==========================
+
+cat $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/link.txt $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/link.txt $DATA_ROOT/11_nucmer_repeat/cottens_abruijn_delbruecki_streptococcus/deltaFiltered/link.txt > $DATA_ROOT/11_nucmer_repeat/links.txt
+
+
+###==========================
+##Lhev and Lacido repeats
+###==========================
+mkdir -p $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/{01_fasta,nucmer,deltaFiltered}
+cat $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/01_fasta/Lhev.fasta $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/01_fasta/Lacido.fasta > $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/01_fasta/Lhev_Lacido.fasta
+##nucmer
+cd $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/nucmer/
+nucmer -maxmatch -nosimplify $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/01_fasta/Lhev_Lacido.fasta $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/01_fasta/Lhev_Lacido.fasta
+cd $DATA_ROOT
+##delta-filter
+delta-filter -i 85 -l 3000  $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/nucmer/out.delta >  $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/filtered.txt
+##split files
+cd $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/
+split -t ">" -l 1 $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/filtered.txt
+cd $DATA_ROOT
+##extract only necassary files
+grep "[[:space:]]" $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/xac | awk 'BEGIN {OFS ="\t"} {print "Lhev" , $1 , $2 , "Lacido" , $3 , $4}' > $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/links.txt
+tail -18 $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/links.txt > $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/link.txt
+rm $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/links.txt
+
+###==========================
+##Lhev repeats
+###==========================
+
+##extract only necassary files
+grep "[[:space:]]" $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/xab | awk 'BEGIN {OFS ="\t"} {print "Lhev" , $1 , $2 , "Lhev" , $3 , $4}' > $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/links_intra.txt
+tail -2 $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/links_intra.txt > $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/link_intra.txt
+rm $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/links_intra.txt
+
+###==========================
+##Ldel repeats
+###==========================
+
+##extract only necassary files
+grep "[[:space:]]" $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/xab | awk 'BEGIN {OFS ="\t"} {print "Ldel" , $1 , $2 , "Ldel" , $3 , $4}' > $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/links_intra.txt
+tail -18 $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/links_intra.txt > $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/link_intra.txt
+rm $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/links_intra.txt
+
+
+###==========================
+##Sterm repeats
+###==========================
+
+grep "[[:space:]]" $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/xab | awk 'BEGIN {OFS ="\t"} {print "Sterm" , $1 , $2 , "Sterm" , $3 , $4}' > $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/links_intra.txt
+tail -18 $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/links_intra.txt > $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/link_intra.txt
+rm $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/links_intra.txt
+##size of repeats
+
+###==========================
+##cat all three intragenomic repeat files together
+###==========================
+
+cat $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/link_intra.txt $DATA_ROOT/11_nucmer_repeat/Lhev_Sterm/deltaFiltered/link_intra.txt $DATA_ROOT/11_nucmer_repeat/Lhev_Lacido/deltaFiltered/link_intra.txt > $DATA_ROOT/11_nucmer_repeat/link_intra.txt
+
+
+```
+
+
+
+##Blasting the assemblages against the entire prokaryotic complete genome database
+After having assembled the genomes with different assembly algorithms we continue to blast all contigs against the current prokaryotic complete genome database.
+In the following we creat the complete genome database and locally BLAST against it.
+
+
+```{bash BLAST , warning=F, eval=F}
+###==========================
+##locations
+###==========================
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+
+###-----------------
+##create complete prokaryotic genomes blast database
+###-----------------
+ls $blastdb | awk -F. '{print $1, $2}' | sed 's/ /./g'> $blastdb/filelist.txt
+
+for FILE in `cat $blastdb/filelist.txt`
+  do
+    gunzip -c $blastdb/${FILE}*
+    perl $DATA_ROOT/02_scripts/gbk2fasta.pl < $blastdb/${FILE}* >> $blastdb/all_prokaryotes.fa
+    rm $blastdb/${FILE}*.gbff
+  done
+
+
+##creat blastdb
+$blast_root/makeblastdb -max_file_sz 10GB -in $blastdb/all_prokaryotes.fa -out $blastdb/all_prokaryotes -parse_seqids -dbtype nucl
+###-----------------
+##blast Hgap4 assembly
+###-----------------
+
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/04_HGAP4/${date}assembly_${name}/blast/
+     $blast_root/blastn -num_threads 16 -max_hsps 2 -max_target_seqs 2 -task megablast -show_gis -query $DATA_ROOT/04_HGAP4/${date}assembly_${name}/fasta/assembly.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/04_HGAP4/${date}assembly_${name}/blast/blastAssembly_04.txt -evalue 0.01 -word_size 64
+   done
+##sort for best hit
+#sort -k1,1 -k12,12nr -k11,11n  $DATA_ROOT/04_HGAP4/20171114assembly_lapraz/blast/blastAssembly_03.txt | sort -u -k1,1 --merge
+
+date=20171114
+for name in cottens lapraz
+   do
+      echo species level for ${name}
+           sort -k1,1 -k12,12nr -k11,11n $DATA_ROOT/04_HGAP4/${date}assembly_${name}/blast/blastAssembly_04.txt | sort -u -k1,1 --merge|cut -f 13|awk 'BEGIN {OFS=" "}; {print $1, $2}'|sort|uniq -c
+      echo strain level for ${name}
+      sort -k1,1 -k12,12nr -k11,11n  $DATA_ROOT/04_HGAP4/${date}assembly_${name}/blast/blastAssembly_04.txt | sort -u -k1,1 --merge|cut -f 13|sort| uniq -c
+   done
+
+###-----------------
+##blast ABruijn assembly
+###-----------------
+
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}/blast/
+     $blast_root/blastn -num_threads 16 -max_hsps 2 -max_target_seqs 2 -task megablast -show_gis -query   $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/05_abruijn/assembly_${name}/blast/blastAssembly.txt -evalue 0.01 -word_size 64
+   done
+##sort for best hit
+#sort -k1,1 -k12,12nr -k11,11n  $DATA_ROOT/05_abruijn/assembly_lapraz/blast/blastAssembly.txt | sort -u -k1,1 --merge
+##uniq strains
+#sort -k1,1 -k12,12nr -k11,11n  $DATA_ROOT/05_abruijn/assembly_lapraz/blast/blastAssembly.txt | sort -u -k1,1 --merge|cut -f 13|sort| uniq -c
+##species
+
+date=20171114
+for name in cottens lapraz
+   do
+      echo species level for ${name}
+           sort -k1,1 -k12,12nr -k11,11n  $DATA_ROOT/05_abruijn/assembly_${name}/blast/blastAssembly.txt | sort -u -k1,1 --merge|cut -f 13|awk 'BEGIN {OFS=" "}; {print $1, $2}'|sort|uniq -c
+      echo strain level for ${name}
+      sort -k1,1 -k12,12nr -k11,11n  $DATA_ROOT/05_abruijn/assembly_lapraz/blast/blastAssembly.txt | sort -u -k1,1 --merge|cut -f 13|sort| uniq -c
+   done
+
+
+
+
+```
+
+## Align raw reads to assembled genomes
+I a proceeding step we create a BLAST database of the assembled metagenomic contigs and aligning all raw reads against them. Thereby we check how complete the current metagenome assembly is. 
+```{bash raw_read_align , warning=F, eval=F}
+##----------------
+##locations
+##----------------
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+##=============
+##Abruijn
+##=============
+##----------------
+##creat abruijn bwa index
+##----------------
+date=20171114
+for name in cottens lapraz
+   do
+    bwa index $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.fasta 
+  done
+###-----------------
+##align raw reads against abruijn assembly
+###-----------------
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/
+     bwa mem $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq -x pacbio -t 12|samtools sort -@8 -O BAM -o $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam -
+   done
+   
+###-----------------
+##align raw reads against abruijn >7000bp  assembly
+###-----------------
+##index
+date=20171114
+for name in cottens lapraz
+   do
+    bwa index $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/polished_1.fasta 
+  done
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/
+     bwa mem $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/polished_1.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq -x pacbio -t 6|samtools sort -@8 -O BAM -o$DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted.bam -
+   done   
+
+
+
+##=============
+##Hgap4
+##=============
+##----------------
+##creat hagp2 bwa index
+##----------------
+date=20171114
+for name in cottens lapraz
+   do
+    bwa index $DATA_ROOT/04_HGAP4/${date}assembly_${name}/fasta/assembly.fasta
+  done
+###-----------------
+##align raw reads against hgap4 assembly
+###-----------------
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/
+     bwa mem $DATA_ROOT/04_HGAP4/${date}assembly_${name}/fasta/assembly.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq -x pacbio -t 12|samtools sort -@8 -O BAM -o $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam -
+   done    
+
+```
+
+##Divide well matching reads and not aligning reads
+To see the completness of the metagenome assembly and potential additional microbial sequences we divide the aligning and the non-aligning reads.
+We do this based on the MAPQ score. 
+```{bash unmapped_mapped_READS , warning=F, eval=F}
+##----------------
+##locations
+##----------------
+
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+QUAL_ROOT=/home/bioinf/apps/qualimap_v2.2.1/
+
+
+
+##=============
+##Abruijn
+##=============
+date=
+#date=20171114
+for name in cottens_min5000bp lapraz_min5000bp
+   do
+      mkdir -p $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/bamqc
+      samtools view -F 4 $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam > $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_mapped.bam 
+      samtools view -b -f 4 $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam > $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam
+      bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam -outdir $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/bamqc/ --java-mem-size=2G
+      grep "Globals" -A 12  $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/global_stats.txt
+      grep "Coverage per contig" -A 1000  $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/genome_results.txt > $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/contig_stats.txt
+  done
+
+
+##=============
+##Hgap4
+##=============
+
+date=20171114
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/bamqc
+      samtools view -F 4 $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam > $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted_mapped.bam
+      samtools view -b -f 4 $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam > $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam
+      samtools view $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam |awk '{OFS="\t"; print ">"$1"\n"$10}' - > $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fasta
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam -outdir $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/bamqc/ --java-mem-size=2G
+      grep "Globals" -A 12  $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/global_stats.txt
+      grep "Coverage per contig" -A 1000  $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/genome_results.txt > $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/contig_stats.txt
+   done    
+   
+   
+   
+
+```
+
+bamqc Auswertung in R
+```{r bamqc ,warning=FALSE,eval=FALSE}
+
+bamqc_directory <- "~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/05_abruijn/assembly_"
+
+##------------
+##global stats
+##------------
+for(i in c("cottens_min5000bp","lapraz_min5000bp")){
+nam_0 <- paste("global_stats_abruijn_",i,sep="")
+
+assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align/bamqc/global_stats.txt",sep=""), "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE))
+
+nam <- paste("global_stats_abruijn_",i,sep="")
+nam_2 <- paste("mapped_unmapped",i,sep="")
+
+assign(nam_2,setNames(c(as.numeric(unlist(get(nam)[3,2])),(as.numeric(unlist(get(nam)[2,2]))-as.numeric(unlist(get(nam)[3,2])))),c("mapped reads","unmapped reads")))
+
+#assign(nam,setNames(as.vector(unlist(get(nam_2)$sequence_length_distribution[,2])),as.vector(unlist(get(nam_2)$sequence_length_distribution[,1]))))
+#barplot(height =get(nam),las=2,main = nam)
+}
+
+table_stats <- data.frame("cottens"=mapped_unmappedcottens,"lapraz"=mapped_unmappedlapraz)
+row.names(table_stats) <- names(mapped_unmappedcottens)
+kable(table_stats)
+##------------
+##coverage per contig
+##------------
+
+for(i in c("cotten_min5000bps","lapraz_min5000bp")){
+
+nam_0 <- paste("contig_stats_abruijn_",i,sep="")
+
+assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align/bamqc/contig_stats.txt",sep=""), "\t", escape_double = FALSE, col_names = c("blank","contig","size","bases_mapped","coverage","stdev"), trim_ws = TRUE,skip = 2))  
+  
+nam <- paste("contig_stats_abruijn_",i,sep="")
+nam_2 <- paste("table",i,sep="")
+
+assign(nam_2,data.frame(get(nam)[,-1]))
+print(i)
+kable(get(nam_2))
+}
+##------------
+##coverage across ref
+##------------
+
+for(i in c("cottens_min5000bp","lapraz_min5000bp")){
+
+nam_0 <- paste("coverage_stats_abruijn_",i,sep="")
+
+assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align/bamqc/raw_data_qualimapReport/coverage_across_reference.txt",sep=""), "\t", escape_double = FALSE,col_names = c("position","coverage"), trim_ws = TRUE,skip = 1))  
+  
+    
+nam <- paste("coverage_stats_abruijn_",i,sep="")
+nam_2 <- paste("coverage_Abruijn_",i,sep="")
+nam_3 <- paste("table",i,sep="")
+
+##cumulative genome size
+assign(nam_3,cbind(get(nam_3),"location"=cumsum(get(nam_3)$size)))
+
+
+assign(nam_2,data.frame(get(nam)))
+ggplot(data=get(nam_2), aes(x=position, y=coverage)) +
+  geom_line()+
+  theme_light()+
+  geom_hline(yintercept = 100,color="red",linetype="dashed")+
+  geom_vline(data=get(nam_3),aes(xintercept = location),colour="blue",linetype=3)+
+  annotate("text", min(get(nam_2)$position), 100, vjust = -1, label = "100 x",color="red")+
+  labs(title=nam_2)
+}
+##------------
+##mapping quality across reference
+##------------
+
+for(i in c("cottens_min5000bp","lapraz_min5000bp")){
+
+nam_0 <- paste("mapping_stats_abruijn_",i,sep="")
+
+assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align/bamqc/raw_data_qualimapReport/mapping_quality_across_reference.txt",sep=""), "\t", escape_double = FALSE,col_names = c("position","MappingQuality"), trim_ws = TRUE,skip = 1))  
+    
+  
+nam <- paste("mapping_stats_abruijn_",i,sep="")
+nam_2 <- paste("mappingQuality_Abruijn_",i,sep="")
+nam_3 <- paste("table",i,sep="")
+
+assign(nam_2,data.frame(get(nam)))
+ggplot(data=get(nam_2), aes(x=position, y=MappingQuality)) +
+  geom_line()+
+  theme_light()+
+  geom_hline(yintercept = 20,color="red",linetype="dashed")+
+  geom_vline(data=get(nam_3),aes(xintercept = location),colour="blue",linetype=3)+
+  annotate("text", min(get(nam_2)$position), 20, vjust = -1, label = "MapQ 20",color="red")+
+  labs(title=nam_2)
+}
+
+```
+
+##Mapping all raw reads of cottens to two complete genomes
+
+In this section I map the all raw reads from cottens back to the two completly assembled genomes of S.thermophilus and L.delbrueckii. I then continue with the reads that did not map. 
+
+```{bash mappingreads , warning=F, eval=F}
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+name=cottens
+##----------------
+##create database
+##----------------
+
+cat $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/multifasta/linear_1_len1924117_cov316.fa $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/multifasta/linear_2_len2265372_cov167.fa > $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/multifasta/Contig1_Contig2.fa
+
+bwa index $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/multifasta/Contig1_Contig2.fa 
+
+##----------------
+##mapping raw reads
+##----------------
+mkdir -p $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/
+bwa mem $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/multifasta/Contig1_Contig2.fa $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq -x pacbio -t 12|samtools sort -@8 -O BAM -o $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted.bam -
+ 
+##----------------
+##converting bam file
+##----------------   
+      mkdir -p $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/bamqc
+      samtools view -F 4 $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted.bam > $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted_mapped.bam 
+      samtools view -b -f 4 $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted.bam > $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted_unmapped.bam
+      bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted_unmapped.fastq
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted.bam -outdir $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/bamqc/ --java-mem-size=2G
+      grep "Globals" -A 12  $DATA_ROOT/05_abruijn/20171114assembly_${name}_min5000bp/reads2contigs/bamqc/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/bamqc/global_stats.txt
+      grep "Coverage per contig" -A 1000  $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2assembly_align/bamqc/genome_results.txt > $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2assembly_align/bamqc/contig_stats.txt
+ 
+
+
+```
+##Blasting all unmapped reads to the entire blast db
+
+To insure that we are able to assemble the large majority of the diversity we want to check in a following the residual reads which have not been able to map back to the assembled contigs. 
+
+
+```{bash blast_unmapped , warning=FALSE, eval=FALSE}
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db
+
+##----------------
+##ncbi download
+##----------------
+
+##curl --proxy proxy-bvcol.admin.ch:8080 -O ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nt.gz
+##gunzip -c $aditiBlastDB/nt.gz > aditiBlastDB/nt_db/
+##makeblastdb -in $aditiBlastDB/nt -parse_seqids -dbtype nucl
+##---------------- 
+##blast
+##----------------
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/
+
+    $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted_unmapped.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped.txt -evalue 0.01 -word_size 64
+  done
+
+```
+
+##looking at the blast data
+In the following we look specifically at the reads which did not map back assembled contigs. We blasted these reads against the entire NCBI database. 
+
+```{bash blast_unmapped_output_bash ,eval=FALSE}
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db
+
+##----------------
+##blast output
+##----------------
+for name in cottens lapraz
+   do
+    echo 'The following number of reads did not map back to the ' ${name} 'assembly :'
+    grep ">" -c $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted_unmapped.fasta |cut -f 1
+    echo 'From these the following number of reads had a blast hit'
+    wc -l $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped.txt |cut -f1
+
+    cut -f 13 $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/blast_unmapped/blastedUnmapped.txt |sort|uniq -c
+   done
+```
+ 
+##Reads which neither map to assembled contigs nor blast
+
+We identified in the previous step a few reads which did not map to the assembled contigs nor showed a blast hit against the entire ncbi database.
+In the following we try to extract these reads and do the following.
+1. check GC- content of reads
+2. look a sequencing score of the reads 
+
+```{bash unmapped_unblasted_reads,eval=FALSE}
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db
+
+#----------------
+##reads that had blast hits
+##----------------
+#name=cottens
+for name in cottens lapraz
+   do
+    grep ">" $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted_unmapped.fasta|sed 's/>//g' > $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/reads2assembly_align/aligned_sorted_unmapped_names.txt
+    cat $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped.txt |cut -f 1 > $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped_with_blastHits.txt
+  done
+  
+
+#----------------
+##diff
+##----------------
+for name in cottens lapraz
+   do
+    diff $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/reads2assembly_align/aligned_sorted_unmapped_names.txt $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped_with_blastHits.txt |grep "<"|sed 's/< //g' > $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped_without_blastHits.txt
+  done 
+  
+#----------------
+##creat fasta of diff for GC content
+##----------------
+for name in cottens lapraz
+   do
+    rm $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/reads2assembly_align/aligned_sorted_unmapped_unblasted.fasta
+    for query in $(cat $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped_without_blastHits.txt)
+      do
+        grep ${query} -A 1 $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/reads2assembly_align/aligned_sorted_unmapped.fasta >> $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted_unmapped_unblasted.fasta
+        #echo ${query}
+      done
+    infoseq -auto $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/reads2assembly_align/aligned_sorted_unmapped_unblasted.fasta > $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted_unmapped_unblasted_seqinfo.txt
+   done
+
+#----------------
+##calculate gc content (infoseq)
+##----------------
+for name in cottens lapraz
+   do
+    infoseq -nocolumns -delimiter , -only -name -length -pgc $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq > $DATA_ROOT/01_SMRTlink_data/${name}/reads_infoseq_gc_length.txt
+   done
+    
+#----------------
+##number of subreads
+##----------------
+
+##movie name    
+m54073_171026_034928 ##lapaz
+m54073_171026_135911 ##cottens
+##bam file location
+/home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/1_8_La_praz_3_D02.tar.gz/m54073_171026_034928.subreads.bam
+/home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/2_7_Cottens_4_E02.tar.gz/m54073_171026_135911.subreads.bam
+
+##lapraz
+samtools view /home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/1_8_La_praz_3_D02.tar.gz/m54073_171026_034928.subreads.bam|grep "m54073_171026_034928" -c
+#763335
+
+##cottens
+samtools view /home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/2_7_Cottens_4_E02.tar.gz/m54073_171026_135911.subreads.bam|grep "m54073_171026_135911" -c
+##379465
+
+```
+
+```{r unmapped_unblasted_reads ,warning=FALSE,eval=FALSE}
+##--------------
+##import files cottens 
+##--------------
+
+blastedUnmapped_with_blastHits_cottens <- read_csv("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/05_abruijn/assembly_cottens_min5000bp/blast_unmapped/blastedUnmapped_with_blastHits.txt",  col_names = "unmapped_withBlastHits")
+
+blastedUnmapped_without_blastHits_cottens <- read_csv("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/05_abruijn/assembly_cottens_min5000bp/blast_unmapped/blastedUnmapped_without_blastHits.txt",  col_names = "unmapped_withoutBlastHits")
+
+infoseq_all_cottens <- read_csv("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/01_SMRTlink_data/cottens/reads_infoseq_gc_length.txt") 
+View(infoseq_all_cottens)
+
+##--------------
+##import files lapraz 
+##--------------
+
+blastedUnmapped_with_blastHits_lapraz <- read_csv("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/05_abruijn/assembly_lapraz_min5000bp/blast_unmapped/blastedUnmapped_with_blastHits.txt",  col_names = "unmapped_withBlastHits")
+
+blastedUnmapped_without_blastHits_lapraz <- read_csv("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/05_abruijn/assembly_lapraz_min5000bp/blast_unmapped/blastedUnmapped_without_blastHits.txt",  col_names = "unmapped_withoutBlastHits")
+
+infoseq_all_lapraz <- read_csv("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/01_SMRTlink_data/lapraz/reads_infoseq_gc_length.txt") 
+View(infoseq_all_lapraz)
+
+
+```
+
+
+
+##ReAssembly of all non-Genome reads
+
+In the following we reassemble all reads that did not map back to the completetly assembled genomes of S.thermophilus and L.del. 
+
+```{bash asembly_plasmids , warning=F, eval=F}
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+date=
+name=cottens
+
+##----------------
+##abruijn assembly plasmids
+##----------------
+
+mkdir -p $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/{fasta,blast,quast,coverage}
+
+cov=200
+
+$abruijn_root/abruijn -t 10 $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted_unmapped.fastq $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta ${cov} -p pacbio -i 2 -o 2500
+
+##----------------
+##quast
+##----------------
+quast.py $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta/polished_1.fasta -t 8 -o $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/quast/
+##---------------- 
+##blast
+##----------------
+$blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta/polished_1.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/blast/blastAssembly.txt -evalue 0.01 -word_size 64
+
+##----------------
+##coverage
+##----------------
+
+    $bbmap_root/bbwrap.sh ref=$DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta/polished_1.fasta 
+        $bbmap_root/bbwrap.sh ref=$DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta/polished_1.fasta nodisk in=10 $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted_unmapped.fastq out=$DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/coverage 
+
+```
+
+
+##Metaphlan2
+In a first step we want to estimate the diversity of microorganisms in the metagenomic sample. 
+Getting an idea what metagenome size and genetic divergence is potentially crucial for parametrisizing.
+
+Metaphlan2 is a tool based on the blastdb and specifically of uniq genes for each taxonomic classes therein. 
+However this method was orignally developed for the usage with Illumina short read technology. 
+In the following we aim to test how well the taxonomic classification/profiling works for raw long read sequencing data. 
+```{bash metaphlan2 , warning=F, eval=F}
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+##----------------
+##metaphlan Usage
+##----------------
+date=20171114
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/06_metaphlan/${date}assembly_${name}/{bowtie2ouput,metaphlan_profile}/
+    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${date}assembly_${name}/bowtie2ouput/metagenome.bowtie2.bz2 --nproc 12 --input_type fastq > $DATA_ROOT/06_metaphlan/${date}assembly_${name}/metaphlan_profile/profiled_metagenome.txt
+   done
+name=cottens
+
+##=============
+##Pre-Assembled reads
+##=============
+
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaphlan/{bowtie2ouput,metaphlan_profile}/
+     $mpa_dir/metaphlan2.py 01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta --bowtie2out $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaphlan/bowtie2ouput/metagenome.bowtie2.bz2 --nproc 12 --input_type fasta > $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaphlan/metaphlan_profile/profiled_metagenome.txt
+   done 
+
+```
+From the Metaphlan2 output it seems as if only the three most common cheese species are present in the lapraz metagenome.
+```{r metaphlan2_analysis , warning=FALSE,eval=FALSE}
+
+metaphlan_cottens <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/07_PreAssembled/20171114assembly_cottens/metaphlan/metaphlan_profile/profiled_metagenome.txt","\t", escape_double = FALSE, trim_ws = TRUE)
+
+metaphlan_lapraz <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/07_PreAssembled/20171114assembly_lapraz/metaphlan/metaphlan_profile/profiled_metagenome.txt","\t", escape_double = FALSE, trim_ws = TRUE)
+
+```
+
+##functional pathway annotation with HuMaNn2
+
+HUMAnN is a pipeline for efficiently and accurately profiling the presence/absence and abundance of microbial pathways in a community from metagenomic or metatranscriptomic sequencing data (typically millions of short DNA/RNA reads).
+
+```{bash humann2 ,eval=FALSE}
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+##=============
+##make database
+##=============
+mkdir -p $DATA_ROOT/12_humann2/db
+#humann2_databases --download uniref uniref90_diamond $DATA_ROOT/12_humann2/db
+#humann2_databases --download chocophlan full $DATA_ROOT/12_humann2/db
+
+#humann2_config --update database_folders protein $DATA_ROOT/12_humann2/db/uniref/
+
+##=============
+##run humann2 on raw reads
+##=============
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/12_humann2/{db,$name_rawReads}
+     humann2 --nucleotide-database $DATA_ROOT/12_humann2/db/chocophlan/ --protein-database $DATA_ROOT/12_humann2/db/uniref/ --metaphlan $mpa_dir --diamond /home/bioinf/extradrv --input $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq --output $OUTPUT_DIR $DATA_ROOT/12_humann2/${name}_rawReads/
+   done
+```
+
+
+##Blasting raw reads against prokaryotic db
+
+A second possibility is to BLAST all raw reads against the entire prokaryotic blastdb.
+By only ouputing the best hit we can get a good feel for the diversity of microorganisms therein. 
+```{bash blast_raw_reads , warning=F, eval=F}
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+###-----------------
+##filter for long reads (>10'000 bp)
+###-----------------
+date=20171114
+for name in cottens lapraz
+   do
+    prinseq-lite.pl -fastq $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq -min_len 10000 -out_good $DATA_ROOT/01_SMRTlink_data/${name}/reads_min10000bp -out_bad null -out_format 1 
+   done
+###-----------------
+##blast raw reads
+###-----------------
+
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/blast_min10000bp/
+     $blast_root/blastn -num_threads 6 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_min10000bp.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/01_SMRTlink_data/${name}/blast_min10000bp/blast_rawReads.txt -evalue 0.01 -word_size 64
+   done
+   
+###-----------------
+##see mapping regions
+###-----------------
+   
+date=20171114
+for name in cottens lapraz
+   do
+      echo species level for ${name}
+           sort -k1,1 -k12,12nr -k11,11n  $DATA_ROOT/01_SMRTlink_data/${name}/blast_min10000bp/blast_rawReads.txt | sort -u -k1,1 --merge|cut -f 13|awk 'BEGIN {OFS=" "}; {print $1, $2}'|sort|uniq -c
+      echo strain level for ${name}
+      sort -k1,1 -k12,12nr -k11,11n  $DATA_ROOT/01_SMRTlink_data/${name}/blast_min10000bp/blast_rawReads.txt | sort -u -k1,1 --merge|cut -f 13|sort| uniq -c
+   done
+
+
+```
+
+##compute alignment depth along ref genomes
+
+In order to control the completness of the metagenome assembly we create a nucleotide wise coverage along all matching reference genomes.
+We do this with a samtools depth command. 
+
+```{bash alignment_depth , warning=F, eval=F}
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+###-----------------
+##Hgap4 depth
+###-----------------
+date=20171114
+for name in cottens lapraz
+   do
+    samtools depth -a -Q 10 $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam > $DATA_ROOT/04_HGAP4/${date}assembly_${name}/reads2assembly_align/aligned_sorted_coverage.bed
+  done
+  
+###-----------------
+##Abruijn depth
+###-----------------
+date=20171114
+for name in cottens lapraz
+   do
+    samtools depth -a -Q 10 $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam > $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_coverage.bed
+  done  
+```
+
+##Metaquast
+We can analyse the current assemblages with a tool specifically designed for metagenomics.
+If no reference genomes are provided it will BLASTn against the SILVA database to identify potential reference candidates. 
+```{bash metaquast , warning=F, eval=F}
+
+##----------------
+##locations
+##----------------
+mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
+miniasm_root=/home/bioinf/extradrv/miniasm
+SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
+blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
+blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
+abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+
+
+##=============
+##Abruijn assembly
+##=============
+
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/05_abruijn/${date}assembly_${name}/metaquast/
+     sudo metaquast.py -t 12 $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.fasta --max-ref-number 40 -o $DATA_ROOT/05_abruijn/${date}assembly_${name}/metaquast/
+   done
+
+##=============
+##Hgap4 assembly
+##=============
+
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/04_HGAP4/${date}assembly_${name}/metaquast/
+     sudo metaquast.py -t 12 $DATA_ROOT/04_HGAP4/${date}assembly_${name}/fasta/assembly.fasta --max-ref-number 40 -o $DATA_ROOT/04_HGAP4/${date}assembly_${name}/metaquast/
+   done
+   
+##=============
+##Pre-Assembled reads
+##=============
+     sudo metaquast.py -t 12 01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta --max-ref-number 40 -o $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaquast/
+
+     
+   
+
+date=20171114
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaquast/
+     #sudo metaquast.py -t 12 DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta --max-ref-number 40 -o $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaquast/
+     #sudo metaquast.py -t 12 DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta --references-list $DATA_ROOT/01_SMRTlink_data/reference_list.txt -o $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaquast/
+          sudo metaquast.py -t 12 $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta -R $DATA_ROOT/08_metaquast/01_referenceData/lactobabillus_helveticus.fasta,$DATA_ROOT/08_metaquast/01_referenceData/lactobaicllus_delbruckii.fasta,$DATA_ROOT/08_metaquast/01_referenceData/lactobaicllus_delbruckii.fasta -o $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaquast/
+   done     
+
+```
+
+
+

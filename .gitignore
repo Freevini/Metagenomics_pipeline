@@ -1,0 +1,15 @@
+01_SMRTlink_data/
+03_minimap_miniasm/
+04_HGAP4/
+05_abruijn/
+06_metaphlan/
+07_PreAssembled/
+08_metaquast/
+08_metaspades/
+09_sprai/
+10_megahit/
+11_nucmer_repeat/
+12_humann2/
+13_abruijn_plasmidAssembly/
+assembly/
+reads_fastqc/
