@@ -155,6 +155,45 @@ $(document).ready(function () {
 <pre class="r"><code>knitr::opts_chunk$set(fig.width=12, fig.height=8,warning=FALSE, message=FALSE)</code></pre>
 </div>
 </div>
+<div id="creat-file-shortcuts" class="section level2">
+<h2>creat file shortcuts</h2>
+<p>Before starting all file and programm locations have to be filled out or check. These shortcut locations will be used throughout the code and therefor have to only be adjusted once.</p>
+<p>However the fileShortucts.sh script location has to be changed with a search/replace throughout the scirpt if necessary!</p>
+<pre class="bash"><code>
+file=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##header
+echo '#!/bin/bash' &gt;&gt; $file
+##locations
+echo 'DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109' &gt;&gt; $file
+echo 'minimap2_root=/home/bioinf/extradrv/minimap2/minimap2' &gt;&gt; $file
+echo 'miniasm_root=/home/bioinf/extradrv/miniasm' &gt;&gt; $file
+echo 'SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000' &gt;&gt; $file
+echo 'blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin' &gt;&gt; $file
+echo 'blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive' &gt;&gt; $file
+echo 'sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23' &gt;&gt; $file
+echo 'abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin' &gt;&gt; $file
+echo 'circular_root=/home/bioinf/extradrv/identifyCircularContigs-master' &gt;&gt; $file
+echo 'bbmap_root=/opt/Geneious/bundledPlugins/com.biomatters.plugins.bbtools.BBToolsPlugin/com/biomatters/plugins/bbtools/BBMap_37.25/bbmap/' &gt;&gt; $file
+echo 'blob_root=/home/bioinf/extradrv/blobology' &gt;&gt; $file
+echo 'QUAL_ROOT=/home/bioinf/apps/qualimap_v2.2.1/' &gt;&gt; $file
+echo 'mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c' &gt;&gt; $file
+echo 'aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db' &gt;&gt; $file
+</code></pre>
+</div>
+<div id="file-locations" class="section level2">
+<h2>File locations</h2>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##rawData
+rawData_cottens=$DATA_ROOT/01_SMRTlink_data/cottens/reads.fastq
+rawData_lapraz=$DATA_ROOT/01_SMRTlink_data/lapraz/reads.fastq
+
+##size selected rawData
+min5000bp_cottens=$DATA_ROOT/01_SMRTlink_data/01_cottens_min5000bp/reads.fastq
+min5000bp_lapraz=$DATA_ROOT/01_SMRTlink_data/01_lapraz_min5000bp/reads.fastq
+</code></pre>
+</div>
 <div id="sequencing-stats" class="section level2">
 <h2>Sequencing stats</h2>
 <p>The sequencing stats were obtained from the standard ouptut file of SMRTlink and are as following:</p>
@@ -256,17 +295,8 @@ knitr::kable(stats_table)</code></pre>
 <div id="hgap4" class="section level2">
 <h2>HGAP4</h2>
 <p>HGAP4 is the pacbio assembler implemented in SMRTlink 5.0. In the prelimary analysis based on the three Lactobacillus helveticus strains HGAP4 showed the best performance (precision and recall) for metagenome data. the HGAP4 assembly was run on default with an expected overall genome size of 10Mb. This was done in the SMRTlink GUI.</p>
-<pre class="bash"><code>###==========================
-##locations
-###==========================
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23
+<pre class="bash"><code>
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###==========================
 ##check circularity
@@ -281,16 +311,7 @@ for name in cottens lapraz
 <div id="abruijn" class="section level2">
 <h2>Abruijn</h2>
 <p>Abruijn is an assembler from the Pevzner lab that has shown to be very efficient and easy to use with different kinds of sequencing date.</p>
-<pre class="bash"><code>
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
-circular_root=/home/bioinf/extradrv/identifyCircularContigs-master
-bbmap_root=/opt/Geneious/bundledPlugins/com.biomatters.plugins.bbtools.BBToolsPlugin/com/biomatters/plugins/bbtools/BBMap_37.25/bbmap/
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##---------------
 ##extract raw data
@@ -391,7 +412,7 @@ for name in cottens lapraz
 <div id="look-at-assembled-contigs" class="section level2">
 <h2>Look at assembled contigs</h2>
 <p>In the following we look at the assembled contigs</p>
-<pre class="bash"><code>DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 for name in cottens lapraz
    do
@@ -437,17 +458,7 @@ for(i in c(&quot;cottens&quot;,&quot;lapraz&quot;)){
 <div id="minimap2-and-miniasm-from-heng-li" class="section level2">
 <h2>Minimap2 and Miniasm from Heng Li</h2>
 <p>The recently developed Minimap2 (Mapper) amd Miniasm (overlaper) are much faster as all other methods.</p>
-<pre class="bash"><code>###==========================
-##locations
-###==========================
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###==========================
 ##Minimap2 Overlap
@@ -478,19 +489,7 @@ $miniasm_root/miniasm -f $DATA_ROOT/01_SMRTlink_data/01_cottens_min5000bp/reads.
 <div id="metaspades-and-megahit-as-a-debruijn-assembler-specifically-for-metagenomic-datasets" class="section level2">
 <h2>Metaspades and megahit as a Debruijn assembler specifically for metagenomic datasets</h2>
 <p>Although Debruijn assemblers are orignally meant for short and low error rate sequences we give it a try on the reads &gt;5000bp.</p>
-<pre class="bash"><code>
-###==========================
-##locations
-###==========================
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
-bbmap_root=/opt/Geneious/bundledPlugins/com.biomatters.plugins.bbtools.BBToolsPlugin/com/biomatters/plugins/bbtools/BBMap_37.25/bbmap/
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###==========================
 ##Metaspades
@@ -518,17 +517,7 @@ bbmap_root=/opt/Geneious/bundledPlugins/com.biomatters.plugins.bbtools.BBToolsPl
 <div id="sprai-error-correction" class="section level2">
 <h2>sprai error correction</h2>
 <p>Sprai is able to do the error correction without assembly.</p>
-<pre class="bash"><code>###==========================
-##locations
-###==========================
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###==========================
 ##sprai
@@ -558,19 +547,7 @@ for name in cottens lapraz
 </div>
 <div id="blobology-on-preassemblies" class="section level2">
 <h2>Blobology on preassemblies</h2>
-<pre class="bash"><code>
-###==========================
-##locations
-###==========================
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23
-blob_root=/home/bioinf/extradrv/blobology
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###==========================
 ##run blobology
@@ -621,18 +598,7 @@ $blob_root/makeblobplot.R blobplot.txt 0.01 taxlevel_order
 <div id="nucmer-to-align-different-assemblies-against-eachother" class="section level2">
 <h2>Nucmer to align different assemblies against eachother</h2>
 <p>The large limitation in Assembling genomes as well as metagenomes is the ability to sequence larger than repeats. For a single genome this means the read length needs to be sufficiently long to span the largest repeat. However for metagenome assembly there is additonally to the intragenomic repeat a difficulty to dinstinguish inter genomic repeats <span class="citation">(Olson et al. 2017)</span>. In order to look at the repeats</p>
-<pre class="bash"><code>###==========================
-##locations
-###==========================
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-sprai_root=/home/bioinf/extradrv/sprai-0.9.9.23
-blob_root=/home/bioinf/extradrv/blobology
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###==========================
 ##combine delbruecki and streptococcus from lapraz abruijn assembly
@@ -771,18 +737,7 @@ cat $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/link_intra.t
 <div id="blasting-the-assemblages-against-the-entire-prokaryotic-complete-genome-database" class="section level2">
 <h2>Blasting the assemblages against the entire prokaryotic complete genome database</h2>
 <p>After having assembled the genomes with different assembly algorithms we continue to blast all contigs against the current prokaryotic complete genome database. In the following we creat the complete genome database and locally BLAST against it.</p>
-<pre class="bash"><code>###==========================
-##locations
-###==========================
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
-
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###-----------------
 ##create complete prokaryotic genomes blast database
@@ -850,17 +805,7 @@ for name in cottens lapraz
 <div id="align-raw-reads-to-assembled-genomes" class="section level2">
 <h2>Align raw reads to assembled genomes</h2>
 <p>I a proceeding step we create a BLAST database of the assembled metagenomic contigs and aligning all raw reads against them. Thereby we check how complete the current metagenome assembly is.</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##=============
 ##Abruijn
@@ -926,20 +871,7 @@ for name in cottens lapraz
 <div id="divide-well-matching-reads-and-not-aligning-reads" class="section level2">
 <h2>Divide well matching reads and not aligning reads</h2>
 <p>To see the completness of the metagenome assembly and potential additional microbial sequences we divide the aligning and the non-aligning reads. We do this based on the MAPQ score.</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
-QUAL_ROOT=/home/bioinf/apps/qualimap_v2.2.1/
-
-
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##=============
 ##Abruijn
@@ -1073,17 +1005,7 @@ ggplot(data=get(nam_2), aes(x=position, y=MappingQuality)) +
 <div id="mapping-all-raw-reads-of-cottens-to-two-complete-genomes" class="section level2">
 <h2>Mapping all raw reads of cottens to two complete genomes</h2>
 <p>In this section I map the all raw reads from cottens back to the two completly assembled genomes of S.thermophilus and L.delbrueckii. I then continue with the reads that did not map.</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 name=cottens
 ##----------------
@@ -1116,18 +1038,8 @@ bwa mem $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/fasta/multifasta/Contig
 <div id="blasting-all-unmapped-reads-to-the-entire-blast-db" class="section level2">
 <h2>Blasting all unmapped reads to the entire blast db</h2>
 <p>To insure that we are able to assemble the large majority of the diversity we want to check in a following the residual reads which have not been able to map back to the assembled contigs.</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
-aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
 
 ##----------------
 ##ncbi download
@@ -1139,29 +1051,19 @@ aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db
 ##---------------- 
 ##blast
 ##----------------
+name=lapraz
 for name in cottens lapraz
    do
     mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/
 
-    $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted_unmapped.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped.txt -evalue 0.01 -word_size 64
+    $blast_root/blastn -num_threads 15 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted_unmapped.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped.txt -evalue 0.01 -word_size 64
   done
 </code></pre>
 </div>
 <div id="looking-at-the-blast-data" class="section level2">
 <h2>looking at the blast data</h2>
 <p>In the following we look specifically at the reads which did not map back assembled contigs. We blasted these reads against the entire NCBI database.</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
-aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##----------------
 ##blast output
@@ -1179,18 +1081,7 @@ for name in cottens lapraz
 <div id="reads-which-neither-map-to-assembled-contigs-nor-blast" class="section level2">
 <h2>Reads which neither map to assembled contigs nor blast</h2>
 <p>We identified in the previous step a few reads which did not map to the assembled contigs nor showed a blast hit against the entire ncbi database. In the following we try to extract these reads and do the following. 1. check GC- content of reads 2. look a sequencing score of the reads</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
-aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 #----------------
 ##reads that had blast hits
@@ -1277,20 +1168,8 @@ View(infoseq_all_lapraz)</code></pre>
 <div id="reassembly-of-all-non-genome-reads" class="section level2">
 <h2>ReAssembly of all non-Genome reads</h2>
 <p>In the following we reassemble all reads that did not map back to the completetly assembled genomes of S.thermophilus and L.del.</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
-date=
-name=cottens
 
 ##----------------
 ##abruijn assembly plasmids
@@ -1323,17 +1202,7 @@ $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablas
 <h2>Metaphlan2</h2>
 <p>In a first step we want to estimate the diversity of microorganisms in the metagenomic sample. Getting an idea what metagenome size and genetic divergence is potentially crucial for parametrisizing.</p>
 <p>Metaphlan2 is a tool based on the blastdb and specifically of uniq genes for each taxonomic classes therein. However this method was orignally developed for the usage with Illumina short read technology. In the following we aim to test how well the taxonomic classification/profiling works for raw long read sequencing data.</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##----------------
 ##metaphlan Usage
@@ -1365,17 +1234,7 @@ metaphlan_lapraz &lt;- read_delim(&quot;~/bioinf_archive/43_sovi_storage/Project
 <div id="functional-pathway-annotation-with-humann2" class="section level2">
 <h2>functional pathway annotation with HuMaNn2</h2>
 <p>HUMAnN is a pipeline for efficiently and accurately profiling the presence/absence and abundance of microbial pathways in a community from metagenomic or metatranscriptomic sequencing data (typically millions of short DNA/RNA reads).</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##=============
 ##make database
@@ -1398,17 +1257,7 @@ for name in cottens lapraz
 <div id="blasting-raw-reads-against-prokaryotic-db" class="section level2">
 <h2>Blasting raw reads against prokaryotic db</h2>
 <p>A second possibility is to BLAST all raw reads against the entire prokaryotic blastdb. By only ouputing the best hit we can get a good feel for the diversity of microorganisms therein.</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###-----------------
 ##filter for long reads (&gt;10'000 bp)
@@ -1446,17 +1295,7 @@ for name in cottens lapraz
 <div id="compute-alignment-depth-along-ref-genomes" class="section level2">
 <h2>compute alignment depth along ref genomes</h2>
 <p>In order to control the completness of the metagenome assembly we create a nucleotide wise coverage along all matching reference genomes. We do this with a samtools depth command.</p>
-<pre class="bash"><code>##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###-----------------
 ##Hgap4 depth
@@ -1479,19 +1318,7 @@ for name in cottens lapraz
 <div id="metaquast" class="section level2">
 <h2>Metaquast</h2>
 <p>We can analyse the current assemblages with a tool specifically designed for metagenomics. If no reference genomes are provided it will BLASTn against the SILVA database to identify potential reference candidates.</p>
-<pre class="bash"><code>
-##----------------
-##locations
-##----------------
-mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c
-DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-minimap2_root=/home/bioinf/extradrv/minimap2/minimap2
-miniasm_root=/home/bioinf/extradrv/miniasm
-SMRTLINK_ROOT=/home/bioinf/extradrv/opt/pacbio/smrtlink/userdata/jobs_root/000
-blast_root=/home/bioinf/extradrv/ncbi-blast-2.7.1+/bin
-blastdb=/home/bioinf/bioinf_archive/43_sovi_storage/blastArchive
-abruijn_root=/home/bioinf/extradrv/abruijn/ABruijn-master/bin
-
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##=============
 ##Abruijn assembly
