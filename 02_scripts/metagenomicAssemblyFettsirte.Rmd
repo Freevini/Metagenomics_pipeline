@@ -60,7 +60,7 @@ However the fileShortucts.sh script location has to be changed with a search/rep
 file=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##header
-echo '#!/bin/bash' >> $file
+echo '#!/bin/bash' > $file
 ##locations
 echo 'DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109' >> $file
 echo 'minimap2_root=/home/bioinf/extradrv/minimap2/minimap2' >> $file
@@ -76,6 +76,11 @@ echo 'blob_root=/home/bioinf/extradrv/blobology' >> $file
 echo 'QUAL_ROOT=/home/bioinf/apps/qualimap_v2.2.1/' >> $file
 echo 'mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c' >> $file
 echo 'aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db' >> $file
+echo 'mOTU_ROOT=/home/bioinf/extradrv' >> $file
+echo 'metapha=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c' >> $file
+
+
+
 
 ```
 ##File locations
@@ -119,16 +124,59 @@ suppressPackageStartupMessages(library("dplyr"))
 
 make FASTQC
 ```{bash fastqc , warning=FALSE, echo=FALSE,eval=FALSE}
-
+##------------
+##Definitions
+##------------
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+threads=4
+
+##------------
+##fastqc for raw reads
+##------------
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/fastqc/unzipped
+    fastqc $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq -t ${threads} -o $DATA_ROOT/01_SMRTlink_data/${name}/fastqc
+    sed -n '1~4s/^@/>/p;2~4p' $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq > $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta
+    seq_length.py $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/seq_length.ttxt
+   done
+   
+##------------
+##fastqc for min_5000bp reads
+##------------
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/fastqc/unzipped
+    fastqc $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads_${name}_min5000.fastq -t ${threads} -o $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/fastqc
+    sed -n '1~4s/^@/>/p;2~4p' $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads_${name}_min5000.fastq > $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads_${name}_min5000.fasta
+    seq_length.py $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads_${name}_min5000.fasta > $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/seq_length.ttxt
+   done 
+   
+##------------
+##fastqc for preassembled reads 
+##------------
+#cp $DATA_ROOT/01_SMRTlink_data/cottens/preassembled_reads/preads4falcon.fasta $DATA_ROOT/01_SMRTlink_data/cottens/preassembled_reads/preads4falcon_cottens.fasta
+#cp $DATA_ROOT/01_SMRTlink_data/lapraz/preassembled_reads/preads4falcon.fasta $DATA_ROOT/01_SMRTlink_data/lapraz/preassembled_reads/preads4falcon_lapraz.fasta
 
 for name in cottens lapraz
    do
-    #mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/fastqc/unzipped
-    #fastqc $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq -t 8 -o $DATA_ROOT/01_SMRTlink_data/${name}/fastqc
-    #sed -n '1~4s/^@/>/p;2~4p' $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq > $DATA_ROOT/01_SMRTlink_data/${name}/reads.fasta
-    seq_length.py $DATA_ROOT/01_SMRTlink_data/${name}/reads.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/seq_length.ttxt
-   done
+    mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/fastqc
+    fastqc $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon_${names}.fasta -t ${threads} -o $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/fastqc
+    seq_length.py $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon_${names}.fasta > $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/seq_length.ttxt
+   done  
+   
+##------------
+##fastqc for cicular consensus reads 
+##------------
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}_ccs/fastqc
+    fastqc $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fastq -t ${threads} -o $DATA_ROOT/01_SMRTlink_data/${name}_ccs/fastqc
+    sed -n '1~4s/^@/>/p;2~4p' $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fastq > $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fasta
+    seq_length.py $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fasta > $DATA_ROOT/01_SMRTlink_data/${name}_ccs/seq_length.ttxt
+   done    
+ 
+   
 ```
 
 
@@ -143,18 +191,26 @@ seq_length_cottens <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fett
 
 seq_length_lapraz <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/01_SMRTlink_data/lapraz/seq_length.ttxt", "\t", escape_double = FALSE, col_names = c("read","length"), trim_ws = TRUE)
 
+##reads longer than
 for(i in c("cottens","lapraz")){
 nam <- paste("readlength_distribution_",i,sep="")
 nam_2 <- paste("fastqc_",i,sep="")
 nam_3 <- paste("seq_length_",i,sep="")
 
-#assign(nam,setNames(as.vector(unlist(get(nam_2)$sequence_length_distribution[,2])),as.vector(unlist(get(nam_2)$sequence_length_distribution[,1]))))
-#barplot(height =get(nam),las=2,main = nam)
-
 ggplot(get(nam_3),aes(x=length))+geom_histogram(binwidth = 500)+theme_light()+labs(title=nam_3)
 
 sizethreshold<- 7000
 print(c("There are:",sum(get(nam_3)[,2]>sizethreshold),"reads larger than",sizethreshold,"for",i))
+}
+
+##reads range
+for(i in c("cottens","lapraz")){
+nam <- paste("readlength_distribution_",i,sep="")
+nam_2 <- paste("fastqc_",i,sep="")
+nam_3 <- paste("seq_length_",i,sep="")
+
+print(c("For ",i,"the min read length is:",min(get(nam_3)[,2]),"and max: ",max(get(nam_3)[,2])))
+
 }
 
 ##make a stats output 
@@ -184,6 +240,112 @@ stats_table <- data.frame("total Seq bases"=c(total_seq_bases_1,total_seq_bases_
 rownames(stats_table) <- c("lapraz","cottens")
 knitr::kable(stats_table)
 ```
+
+#Multifastqc of all raw data 
+In order to have an overview over the raw data, the min 5000bp reads and the preassembled reads we create in the following a common multifastqc report. 
+```{bash mutlifastqc_01 ,eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+mkdir -p $DATA_ROOT/01_SMRTlink_data/MultiQc/
+multiqc  -f --title mulitQC_fasta --outdir $DATA_ROOT/01_SMRTlink_data/MultiQc/ \
+        $DATA_ROOT/01_SMRTlink_data/cottens/fastqc \
+        $DATA_ROOT/01_SMRTlink_data/lapraz/fastqc \
+        $DATA_ROOT/01_SMRTlink_data/01_cottens_min5000bp/fastqc \
+        $DATA_ROOT/01_SMRTlink_data/01_lapraz_min5000bp/fastqc \
+        $DATA_ROOT/01_SMRTlink_data/cottens_ccs/fastqc \
+        $DATA_ROOT/01_SMRTlink_data/lapraz_ccs/fastqc 
+```
+
+
+##Metaphlan2
+In a first step we want to estimate the diversity of microorganisms in the metagenomic sample. 
+Getting an idea what metagenome size and genetic divergence is potentially crucial for parametrisizing of the assemblers.
+
+Metaphlan2 is a tool based on the blastdb and specifically of uniq genes for each taxonomic classes therein. 
+However this method was orignally developed for the usage with Illumina short read technology. 
+In the following we aim to test how well the taxonomic classification/profiling works for raw long read sequencing data. 
+
+####Methods
+For the taxonmic profiling we use the preassemble reads. These reads are both longer aswell as error corrected which should increase the power of the results.  
+
+```{bash metaphlan2 , warning=F, eval=F}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##----------------
+##metaphlan Usage for raw reads
+##----------------
+
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/06_metaphlan/${name}_raw/{bowtie2ouput,metaphlan_profile}/
+    rm $DATA_ROOT/06_metaphlan/${name}_raw/bowtie2ouput/metagenome_${name}_raw.bowtie2.bz2
+    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_raw/bowtie2ouput/metagenome_${name}_raw.bowtie2.bz2 --nproc 12 --input_type fastq > $DATA_ROOT/06_metaphlan/${name}_raw/metaphlan_profile/profiled_metagenome_${name}_raw.txt
+   done
+   
+##----------------
+##metaphlan Usage for preassembled reads
+##----------------
+
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/06_metaphlan/${name}_preassembled/{bowtie2ouput,metaphlan_profile}/
+    rm $DATA_ROOT/06_metaphlan/${name}_preassembled/bowtie2ouput/metagenome_${name}_preassembled.bowtie2.bz2
+    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon_${names}.fasta --bowtie2out $DATA_ROOT/06_metaphlan/${name}_preassembled/bowtie2ouput/metagenome_${name}_preassembled.bowtie2.bz2 --nproc 12 --input_type fasta > $DATA_ROOT/06_metaphlan/${name}_preassembled/metaphlan_profile/profiled_metagenome_${name}_preassembled.txt
+   done
+   
+##----------------
+##metaphlan Usage for min5000 reads
+##----------------
+
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/06_metaphlan/${name}_min5000/{bowtie2ouput,metaphlan_profile}/
+    rm $DATA_ROOT/06_metaphlan/${name}_min5000/bowtie2ouput/metagenome_${name}_min5000.bowtie2.bz2
+    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads_${name}_min5000.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_min5000/bowtie2ouput/metagenome_${name}_min5000.bowtie2.bz2 --nproc 12 --input_type fastq > $DATA_ROOT/06_metaphlan/${name}_min5000/metaphlan_profile/profiled_metagenome_${name}_min5000.txt
+   done   
+ 
+##----------------
+##metaphlan Usage for ccs reads
+##----------------
+<
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/06_metaphlan/${name}_ccs/{bowtie2ouput,metaphlan_profile}/
+    rm $DATA_ROOT/06_metaphlan/${name}_ccs/bowtie2ouput/metagenome_${name}_ccs.bowtie2.bz2
+    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_ccs/bowtie2ouput/metagenome_${name}_ccs.bowtie2.bz2 --nproc 12 --input_type fastq > $DATA_ROOT/06_metaphlan/${name}_ccs/metaphlan_profile/profiled_metagenome_${name}_ccs.txt
+   done
+
+
+
+```
+From the Metaphlan2 output it seems as if only the three most common cheese species are present in the lapraz metagenome.
+
+```{r metaphlan2_analysis , warning=FALSE,eval=FALSE}
+
+metaphlan_cottens <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/07_PreAssembled/20171114assembly_cottens/metaphlan/metaphlan_profile/profiled_metagenome.txt","\t", escape_double = FALSE, trim_ws = TRUE)
+
+metaphlan_lapraz <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/07_PreAssembled/20171114assembly_lapraz/metaphlan/metaphlan_profile/profiled_metagenome.txt","\t", escape_double = FALSE, trim_ws = TRUE)
+
+```
+
+##mOTU taxonomic annotation
+In order to test the Metaphlan output we use a second well known taxonomic profiler for metagenomic datasets.
+
+```{bash mOTU ,eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/14_mOTU/${name}/mOTU_output
+      cd ${mOTU_ROOT}
+      perl mOTUs.pl --processors=12 $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq --output-directory $DATA_ROOT/14_mOTU/${name}/mOTU_output
+      cd $DATA_ROOT
+   done
+
+```
+However mOTU does not work with Pacbio data. mOTU was made only for short next generation sequencing technologies, specifically for Illumina, Ion Torrent or 454. 
+
+
 
 #Assemblies
 The subreads are then used to assemble the genomes. In this point lies the major advantage of long reads. Long reads enable the spanning of repeat regions. In general long read assemblers consist of a Overlap Layout Consensus (OLC) algorithm. 
@@ -1010,6 +1172,18 @@ for name in cottens lapraz
 
     $blast_root/blastn -num_threads 15 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted_unmapped.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped.txt -evalue 0.01 -word_size 64
   done
+  
+  
+##---------------- 
+##blast
+##----------------
+name=cottens
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/
+
+    $blast_root/blastn -num_threads 15 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query     $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/reads2assembly_align/aligned_sorted_unmapped.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/05_abruijn/assembly_${name}_min5000bp/blast_unmapped/blastedUnmapped_wordsize16.txt -evalue 0.01 -word_size 16
+  done  
 
 ```
 
@@ -1140,7 +1314,6 @@ In the following we reassemble all reads that did not map back to the completetl
 ```{bash asembly_plasmids , warning=F, eval=F}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
-
 ##----------------
 ##abruijn assembly plasmids
 ##----------------
@@ -1170,48 +1343,6 @@ $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablas
 ```
 
 
-##Metaphlan2
-In a first step we want to estimate the diversity of microorganisms in the metagenomic sample. 
-Getting an idea what metagenome size and genetic divergence is potentially crucial for parametrisizing.
-
-Metaphlan2 is a tool based on the blastdb and specifically of uniq genes for each taxonomic classes therein. 
-However this method was orignally developed for the usage with Illumina short read technology. 
-In the following we aim to test how well the taxonomic classification/profiling works for raw long read sequencing data. 
-```{bash metaphlan2 , warning=F, eval=F}
-source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-##----------------
-##metaphlan Usage
-##----------------
-date=20171114
-for name in cottens lapraz
-   do
-    mkdir -p $DATA_ROOT/06_metaphlan/${date}assembly_${name}/{bowtie2ouput,metaphlan_profile}/
-    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${date}assembly_${name}/bowtie2ouput/metagenome.bowtie2.bz2 --nproc 12 --input_type fastq > $DATA_ROOT/06_metaphlan/${date}assembly_${name}/metaphlan_profile/profiled_metagenome.txt
-   done
-name=cottens
-
-##=============
-##Pre-Assembled reads
-##=============
-
-date=20171114
-for name in cottens lapraz
-   do
-     mkdir -p $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaphlan/{bowtie2ouput,metaphlan_profile}/
-     $mpa_dir/metaphlan2.py 01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta --bowtie2out $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaphlan/bowtie2ouput/metagenome.bowtie2.bz2 --nproc 12 --input_type fasta > $DATA_ROOT/07_PreAssembled/${date}assembly_${name}/metaphlan/metaphlan_profile/profiled_metagenome.txt
-   done 
-
-```
-From the Metaphlan2 output it seems as if only the three most common cheese species are present in the lapraz metagenome.
-```{r metaphlan2_analysis , warning=FALSE,eval=FALSE}
-
-metaphlan_cottens <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/07_PreAssembled/20171114assembly_cottens/metaphlan/metaphlan_profile/profiled_metagenome.txt","\t", escape_double = FALSE, trim_ws = TRUE)
-
-metaphlan_lapraz <- read_delim("~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/07_PreAssembled/20171114assembly_lapraz/metaphlan/metaphlan_profile/profiled_metagenome.txt","\t", escape_double = FALSE, trim_ws = TRUE)
-
-```
-
 ##functional pathway annotation with HuMaNn2
 
 HUMAnN is a pipeline for efficiently and accurately profiling the presence/absence and abundance of microbial pathways in a community from metagenomic or metatranscriptomic sequencing data (typically millions of short DNA/RNA reads).
@@ -1231,11 +1362,15 @@ mkdir -p $DATA_ROOT/12_humann2/db
 ##=============
 ##run humann2 on raw reads
 ##=============
+date=20171114
 for name in cottens lapraz
    do
       mkdir -p $DATA_ROOT/12_humann2/{db,$name_rawReads}
-     humann2 --nucleotide-database $DATA_ROOT/12_humann2/db/chocophlan/ --protein-database $DATA_ROOT/12_humann2/db/uniref/ --metaphlan $mpa_dir --diamond /home/bioinf/extradrv --input $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq --output $OUTPUT_DIR $DATA_ROOT/12_humann2/${name}_rawReads/
-   done
+     humann2 --threads 2 --nucleotide-database $DATA_ROOT/12_humann2/db/chocophlan/ --protein-database $DATA_ROOT/12_humann2/db/uniref/ --metaphlan $metapha/metaphlan2.py --taxonomic-profile $DATA_ROOT/06_metaphlan/${date}assembly_${name}/metaphlan_profile/profiled_metagenome.txt --diamond /home/bioinf/extradrv --input $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq --output $OUTPUT_DIR $DATA_ROOT/12_humann2/${name}_rawReads/
+   done  
+   
+   
+   
 ```
 
 
@@ -1281,6 +1416,8 @@ for name in cottens lapraz
 
 ```
 
+
+
 ##compute alignment depth along ref genomes
 
 In order to control the completness of the metagenome assembly we create a nucleotide wise coverage along all matching reference genomes.
@@ -1308,6 +1445,8 @@ for name in cottens lapraz
   done  
 ```
 
+
+
 ##Metaquast
 We can analyse the current assemblages with a tool specifically designed for metagenomics.
 If no reference genomes are provided it will BLASTn against the SILVA database to identify potential reference candidates. 
@@ -1322,7 +1461,7 @@ date=20171114
 for name in cottens lapraz
    do
      mkdir -p $DATA_ROOT/05_abruijn/${date}assembly_${name}/metaquast/
-     sudo metaquast.py -t 12 $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.fasta --max-ref-number 40 -o $DATA_ROOT/05_abruijn/${date}assembly_${name}/metaquast/
+     sudo metaquast.py -t 2 $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.fasta --max-ref-number 40 -o $DATA_ROOT/05_abruijn/${date}assembly_${name}/metaquast/
    done
 
 ##=============
