@@ -79,7 +79,9 @@ echo 'aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db' >>
 echo 'mOTU_ROOT=/home/bioinf/extradrv' >> $file
 echo 'metapha=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c' >> $file
 
-
+timestamp() {
+  date +"%T"
+}
 
 
 ```
@@ -119,6 +121,26 @@ suppressPackageStartupMessages(library("dplyr"))
 
 # biocLite("curatedMetagenomicData")
 # biocLite("fastqcr")
+```
+
+##make Quality control of the raw reads
+####BamQc
+```{r bamqc_raw ,eval=FALSE}
+##------------
+##Definitions
+##------------
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+##------------
+##bamqc for raw reads
+##------------
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/bamqc
+    $QUAL_ROOT/qualimap bamqc -bam /home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/1_8_La_praz_3_D02.tar.gz/m54073_171026_034928.subreads.bam -outdir $DATA_ROOT/01_SMRTlink_data/${name}/bamqc --java-mem-size=2G
+   done
+   
+grep -v ">" $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta | tr -d '\n' | wc -c
+
 ```
 
 
@@ -371,6 +393,95 @@ for name in cottens lapraz
 
 
 ```
+##flye
+
+```{bash flye_assembly , eval=FALSE}
+##---------
+##directories
+##---------
+##source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##michis directories
+flye_root=/home/bioinf/Software/Flye_2_31/Flye/bin/flye
+blastn_root=blastn
+minimap2_root=/home/bioinf/Software/minimap2Dec06/minimap2
+DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
+aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db
+##---------------
+##creat flye directories
+##---------------
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/15_flye/{assembly_${name}_raw,assembly_${name}_min5000}/{quast,fasta,blast,rawReads2assembly_minimap2}
+   done
+
+##---------------
+##create min5000bp reads
+##---------------
+##for name in cottens lapraz
+##   do
+##    prinseq-lite.pl -fastq $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq -min_len 5000 -out_good $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_min5000bp.fastq -out_bad null -out_format 1 
+##   done
+
+
+
+##---------------
+##flye assembly with rawReads
+##---------------
+size=5m
+for name in cottens lapraz
+  do
+    $flye_root -t 25 --pacbio-raw $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq --out-dir $DATA_ROOT/15_flye/assembly_${name}_raw/fasta --genome-size ${size} -m 5000 -i 3
+    size=7m
+  done
+  
+##---------------
+##flye assembly with min5000bp reads
+##---------------
+size=5m
+for name in cottens lapraz
+  do
+    $flye_root -t 25 --pacbio-raw $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_min5000bp.fastq --out-dir $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta --genome-size ${size} -m 5000 -i 3
+    size=7m
+  done
+  
+###-----------------
+##blast rawread flye assembly (entire ncbi database)
+###-----------------
+
+for name in cottens lapraz
+   do
+     $blastn_root -num_threads 25 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query   $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/contigs.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB -out $DATA_ROOT/15_flye/assembly_${name}_raw/blast/blastAssembly.txt -evalue 0.01 -word_size 64
+   done
+
+###-----------------
+##blast min5000 flye assembly (entire ncbi database)
+###-----------------
+
+for name in cottens lapraz
+   do
+     $blastn_root -num_threads 25 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query   $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/contigs.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB -out $DATA_ROOT/15_flye/assembly_${name}_min5000/blast/blastAssembly.txt -evalue 0.01 -word_size 64
+   done
+
+##-------   
+##rawRead mappingminimap2 to rawRead assembly
+##-------   
+for name in cottens lapraz
+   do
+     ${minimap2_root} -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/contigs.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam - 
+   
+   done 
+
+##-------   
+##rawRead mappingminimap2 to rawRead assembly
+##-------   
+for name in cottens lapraz
+   do
+     ${minimap2_root} -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/contigs.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam - 
+   
+   done 
+
+```
 
 
 ##Abruijn
@@ -397,11 +508,11 @@ for name in cottens lapraz
 ##---------------
 ##abruijn assembly with ALL subreads
 ##---------------
-cov=100
+cov=200
 for name in cottens lapraz
   do
-    $abruijn_root/abruijn -t 12 $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq $DATA_ROOT/05_abruijn/assembly_${name}/fasta ${cov} -p pacbio -o 2500
-    cov=300
+    $abruijn_root/abruijn -t 16  $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq $DATA_ROOT/05_abruijn/assembly_${name}/fasta ${cov} -p pacbio -o 2500
+    cov=900
   done
 
 for name in cottens lapraz
@@ -826,7 +937,6 @@ cat $DATA_ROOT/11_nucmer_repeat/delbruecki_helveticus/deltaFiltered/link_intra.t
 ```
 
 
-
 ##Blasting the assemblages against the entire prokaryotic complete genome database
 After having assembled the genomes with different assembly algorithms we continue to blast all contigs against the current prokaryotic complete genome database.
 In the following we creat the complete genome database and locally BLAST against it.
@@ -904,6 +1014,35 @@ for name in cottens lapraz
 
 ## Align raw reads to assembled genomes
 I a proceeding step we create a BLAST database of the assembled metagenomic contigs and aligning all raw reads against them. Thereby we check how complete the current metagenome assembly is. 
+
+```{bash minimap_rawreads_assembly, eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+##=============
+##Abruijn
+##=============
+
+##-------   
+##index reference genome
+##-------   
+
+#for name in cottens lapraz
+#   do
+#    $minimap2_root -d $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.mmi $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.fasta
+#   done
+
+##-------   
+##read mapping
+##-------   
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/
+     
+     ${minimap2_root} -ax map-pb $DATA_ROOT/05_abruijn/assembly_${name}/fasta/polished_1.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq > $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome.sam
+     
+   done 
+```
+
+
 ```{bash raw_read_align , warning=F, eval=F}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
@@ -968,6 +1107,7 @@ for name in cottens lapraz
    done    
 
 ```
+Aligning with a long noisy read specialized aligner is more stringent. Therfore we prefere the usage of Minimap2 over bwa.
 
 ##Divide well matching reads and not aligning reads
 To see the completness of the metagenome assembly and potential additional microbial sequences we divide the aligning and the non-aligning reads.
@@ -989,6 +1129,8 @@ for name in cottens_min5000bp lapraz_min5000bp
       $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam -outdir $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/bamqc/ --java-mem-size=2G
       grep "Globals" -A 12  $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/global_stats.txt
       grep "Coverage per contig" -A 1000  $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/genome_results.txt > $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/contig_stats.txt
+ 
+      samtools index $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted.bam
   done
 
 
@@ -1008,28 +1150,52 @@ for name in cottens lapraz
       grep "Coverage per contig" -A 1000  $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/genome_results.txt > $DATA_ROOT/05_abruijn/20171114assembly_${name}/reads2assembly_align/bamqc/contig_stats.txt
    done    
    
-   
-   
+
+##=============
+##minimap alignmed of abruijn assembly
+##=============   
+
+
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/bamqc
+      samtools sort $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome.sam -O BAM -o $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted.bam
+      
+      samtools view -F 4 $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted.bam > $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted_mapped.bam
+      
+      samtools view -b -f 4 $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted.bam > $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted_unmapped.bam
+      
+      samtools view $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted_unmapped.bam |awk '{OFS="\t"; print ">"$1"\n"$10}' - > $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted_unmapped.fasta
+      
+      bedtools bamtofastq -i $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted_unmapped.fastq
+      
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted.bam -outdir $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/bamqc/ --java-mem-size=2G
+      
+      grep "Globals" -A 12  $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/bamqc/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/bamqc/global_stats.txt
+      
+      grep "Coverage per contig" -A 1000  $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/bamqc/genome_results.txt > $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/bamqc/contig_stats.txt
+   done 
+ 
 
 ```
 
 bamqc Auswertung in R
 ```{r bamqc ,warning=FALSE,eval=FALSE}
 
-bamqc_directory <- "~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/05_abruijn/assembly_"
+bamqc_directory <- "/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/05_abruijn/assembly_"
 
 ##------------
 ##global stats
 ##------------
-for(i in c("cottens_min5000bp","lapraz_min5000bp")){
+for(i in c("cottens","lapraz")){
 nam_0 <- paste("global_stats_abruijn_",i,sep="")
 
-assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align/bamqc/global_stats.txt",sep=""), "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE))
-
+#assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align_minimap/bamqc/global_stats.txt",sep=""), "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE))
+read.delim(file=paste(bamqc_directory,i,"/reads2assembly_align_minimap/bamqc/global_stats.txt",sep=""), sep="\t")#, escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
 nam <- paste("global_stats_abruijn_",i,sep="")
 nam_2 <- paste("mapped_unmapped",i,sep="")
 
-assign(nam_2,setNames(c(as.numeric(unlist(get(nam)[3,2])),(as.numeric(unlist(get(nam)[2,2]))-as.numeric(unlist(get(nam)[3,2])))),c("mapped reads","unmapped reads")))
+#assign(nam_2,setNames(c(as.numeric(unlist(get(nam)[3,2])),(as.numeric(unlist(get(nam)[2,2]))-as.numeric(unlist(get(nam)[3,2])))),c("mapped reads","unmapped reads")))
 
 #assign(nam,setNames(as.vector(unlist(get(nam_2)$sequence_length_distribution[,2])),as.vector(unlist(get(nam_2)$sequence_length_distribution[,1]))))
 #barplot(height =get(nam),las=2,main = nam)
@@ -1042,11 +1208,11 @@ kable(table_stats)
 ##coverage per contig
 ##------------
 
-for(i in c("cotten_min5000bps","lapraz_min5000bp")){
+for(i in c("cotten","lapraz")){
 
 nam_0 <- paste("contig_stats_abruijn_",i,sep="")
 
-assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align/bamqc/contig_stats.txt",sep=""), "\t", escape_double = FALSE, col_names = c("blank","contig","size","bases_mapped","coverage","stdev"), trim_ws = TRUE,skip = 2))  
+assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align_minimap/bamqc/contig_stats.txt",sep=""), "\t", escape_double = FALSE, col_names = c("blank","contig","size","bases_mapped","coverage","stdev"), trim_ws = TRUE,skip = 2))  
   
 nam <- paste("contig_stats_abruijn_",i,sep="")
 nam_2 <- paste("table",i,sep="")
@@ -1059,11 +1225,11 @@ kable(get(nam_2))
 ##coverage across ref
 ##------------
 
-for(i in c("cottens_min5000bp","lapraz_min5000bp")){
+for(i in c("cottens","lapraz")){
 
 nam_0 <- paste("coverage_stats_abruijn_",i,sep="")
 
-assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align/bamqc/raw_data_qualimapReport/coverage_across_reference.txt",sep=""), "\t", escape_double = FALSE,col_names = c("position","coverage"), trim_ws = TRUE,skip = 1))  
+assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align_minimap/bamqc/raw_data_qualimapReport/coverage_across_reference.txt",sep=""), "\t", escape_double = FALSE,col_names = c("position","coverage"), trim_ws = TRUE,skip = 1))  
   
     
 nam <- paste("coverage_stats_abruijn_",i,sep="")
@@ -1087,11 +1253,11 @@ ggplot(data=get(nam_2), aes(x=position, y=coverage)) +
 ##mapping quality across reference
 ##------------
 
-for(i in c("cottens_min5000bp","lapraz_min5000bp")){
+for(i in c("cottens","lapraz")){
 
 nam_0 <- paste("mapping_stats_abruijn_",i,sep="")
 
-assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align/bamqc/raw_data_qualimapReport/mapping_quality_across_reference.txt",sep=""), "\t", escape_double = FALSE,col_names = c("position","MappingQuality"), trim_ws = TRUE,skip = 1))  
+assign(nam_0,read_delim(paste(bamqc_directory,i,"/reads2assembly_align_minimap/bamqc/raw_data_qualimapReport/mapping_quality_across_reference.txt",sep=""), "\t", escape_double = FALSE,col_names = c("position","MappingQuality"), trim_ws = TRUE,skip = 1))  
     
   
 nam <- paste("mapping_stats_abruijn_",i,sep="")
@@ -1313,33 +1479,34 @@ In the following we reassemble all reads that did not map back to the completetl
 
 ```{bash asembly_plasmids , warning=F, eval=F}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
+cov=200
 ##----------------
 ##abruijn assembly plasmids
 ##----------------
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/13_abruijn_plasmidAssembly/${name}_unmappedminimap_assembly/{fasta,blast,quast,coverage}
+   $abruijn_root/abruijn -t 10 $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted_unmapped.fastq $DATA_ROOT/13_abruijn_plasmidAssembly/${name}_unmappedminimap_assembly/fasta ${cov} -p pacbio -i 2 -o 2500
 
-mkdir -p $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/{fasta,blast,quast,coverage}
 
-cov=200
-
-$abruijn_root/abruijn -t 10 $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted_unmapped.fastq $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta ${cov} -p pacbio -i 2 -o 2500
 
 ##----------------
 ##quast
 ##----------------
-quast.py $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta/polished_1.fasta -t 8 -o $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/quast/
+    quast.py $DATA_ROOT/13_abruijn_plasmidAssembly/${name}_unmappedminimap_assembly/fasta/polished_1.fasta -t 8 -o $DATA_ROOT/13_abruijn_plasmidAssembly/${name}_unmappedminimap_assembly/quast/
 ##---------------- 
 ##blast
 ##----------------
-$blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta/polished_1.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/blast/blastAssembly.txt -evalue 0.01 -word_size 64
+$blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/13_abruijn_plasmidAssembly/${name}_unmappedminimap_assembly/fasta/polished_1.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/13_abruijn_plasmidAssembly/${name}_unmappedminimap_assembly/blastAssembly.txt -evalue 0.01 -word_size 64
 
 ##----------------
 ##coverage
 ##----------------
 
-    $bbmap_root/bbwrap.sh ref=$DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta/polished_1.fasta 
-        $bbmap_root/bbwrap.sh ref=$DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/fasta/polished_1.fasta nodisk in=10 $DATA_ROOT/05_abruijn/${date}assembly_${name}_min5000bp/reads2contigs/aligned_sorted_unmapped.fastq out=$DATA_ROOT/13_abruijn_plasmidAssembly/cottens_min5000bp_sther_ldel/coverage 
+    $bbmap_root/bbwrap.sh ref=$DATA_ROOT/13_abruijn_plasmidAssembly/${name}_unmappedminimap_assembly/fasta/polished_1.fasta 
+        $bbmap_root/bbwrap.sh ref=$DATA_ROOT/13_abruijn_plasmidAssembly/${name}_unmappedminimap_assembly/fasta/polished_1.fasta nodisk in=10 $DATA_ROOT/05_abruijn/assembly_${name}/reads2assembly_align_minimap/raw_${name}_mapped_genome_sorted_unmapped.fastq out=$DATA_ROOT/13_abruijn_plasmidAssembly/${name}_unmappedminimap_assembly/coverage 
 
+done
 ```
 
 
@@ -1349,6 +1516,7 @@ HUMAnN is a pipeline for efficiently and accurately profiling the presence/absen
 
 ```{bash humann2 ,eval=FALSE}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+threads=16
 
 ##=============
 ##make database
@@ -1366,13 +1534,11 @@ date=20171114
 for name in cottens lapraz
    do
       mkdir -p $DATA_ROOT/12_humann2/{db,$name_rawReads}
-     humann2 --threads 2 --nucleotide-database $DATA_ROOT/12_humann2/db/chocophlan/ --protein-database $DATA_ROOT/12_humann2/db/uniref/ --metaphlan $metapha/metaphlan2.py --taxonomic-profile $DATA_ROOT/06_metaphlan/${date}assembly_${name}/metaphlan_profile/profiled_metagenome.txt --diamond /home/bioinf/extradrv --input $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq --output $OUTPUT_DIR $DATA_ROOT/12_humann2/${name}_rawReads/
+     humann2 --threads ${threads} --nucleotide-database $DATA_ROOT/12_humann2/db/chocophlan/ --protein-database $DATA_ROOT/12_humann2/db/uniref/ --metaphlan $metapha/metaphlan2.py --taxonomic-profile $DATA_ROOT/06_metaphlan/${name}_raw/metaphlan_profile/profiled_metagenome_${name}_raw.txt --diamond /home/bioinf/extradrv --input $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq --output $OUTPUT_DIR $DATA_ROOT/12_humann2/${name}_rawReads/
    done  
-   
-   
-   
-```
 
+```
+Every humann2 mapping step (1. Chocophlan,Metaphlan,proteindb,..) is done with bowtie and parameter settings for Illumina reads. 
 
 ##Blasting raw reads against prokaryotic db
 
