@@ -180,9 +180,7 @@ echo 'aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db' &g
 echo 'mOTU_ROOT=/home/bioinf/extradrv' &gt;&gt; $file
 echo 'metapha=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c' &gt;&gt; $file
 
-timestamp() {
-  date +&quot;%T&quot;
-}
+echo 'timestamp() {date +&quot;%T&quot;}'&gt;&gt; $file
 </code></pre>
 </div>
 <div id="file-locations" class="section level2">
@@ -217,9 +215,7 @@ for name in cottens lapraz
    do
     mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/bamqc
     $QUAL_ROOT/qualimap bamqc -bam /home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/1_8_La_praz_3_D02.tar.gz/m54073_171026_034928.subreads.bam -outdir $DATA_ROOT/01_SMRTlink_data/${name}/bamqc --java-mem-size=2G
-   done
-   
-grep -v &quot;&gt;&quot; $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta | tr -d '\n' | wc -c</code></pre>
+   done</code></pre>
 <p>make FASTQC</p>
 <pre class="r"><code>##----------
 ##fastqc
@@ -411,6 +407,59 @@ for name in cottens lapraz
    done
 </code></pre>
 <p>However mOTU does not work with Pacbio data. mOTU was made only for short next generation sequencing technologies, specifically for Illumina, Ion Torrent or 454.</p>
+<p>blast raw reads</p>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##---------------- 
+##fastq2fasta
+##----------------
+for name in cottens lapraz
+   do
+    SECONDS=0
+    sed -n '1~4s/^@/&gt;/p;2~4p' $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq  &gt; $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+   done
+##---------------- 
+##blast
+##----------------
+
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/blast
+    SECONDS=0
+    $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads.txt -evalue 0.01 -word_size 12
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END $name = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+  done
+  
+  </code></pre>
+</div>
+<div id="example-script" class="section level2">
+<h2>Example script</h2>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+scripting(){
+  for name in cottens lapraz
+   do
+    echo $name 
+   done 
+}
+##---------------
+##run script
+##---------------
+LOG_FILE=$DATA_ROOT/log.txt
+
+echo &quot;Author =Vincent Somerville&quot; |tee $LOG_FILE
+echo START = `date +&quot;%Y-%m-%d %H:%M:%S&quot;` |tee -a $LOG_FILE
+echo &quot;...&quot;
+SECONDS=0
+scripting
+declare -f scripting |tee -a $LOG_FILE
+echo &quot;...&quot;
+echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot; |tee -a $LOG_FILE
+echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;` |tee -a $LOG_FILE
+</code></pre>
 </div>
 </div>
 <div id="assemblies" class="section level1">
