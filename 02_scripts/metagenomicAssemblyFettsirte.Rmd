@@ -78,6 +78,9 @@ echo 'mpa_dir=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c' >> $file
 echo 'aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db' >> $file
 echo 'mOTU_ROOT=/home/bioinf/extradrv' >> $file
 echo 'metapha=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c' >> $file
+echo 'ngmlr_root=/home/bioinf/extradrv/ngmlr-0.2.6' >> $file
+echo 'sniffles_root=/home/bioinf/extradrv/Sniffles-master/bin/sniffles-core-1.0.8' >> $file
+
 
 #echo 'timestamp() {date +"%T"}'>> $file
 
@@ -677,6 +680,101 @@ for name in cottens lapraz
       samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
   done   
 ```
+####ngmlr/sniffles
+Ngmlr and sniffles are mappers which are well known to identify structural variation
+```{bash ngmlrSniffles, eval=FALSE}
+
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------   
+##NGMLR of rawreads
+##-------   
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_ngmlr/
+    $ngmlr_root/ngmlr -t 12 -r $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/scaffolds.fasta -q $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam - 
+  done
+  
+##-------   
+##NGMLR of min5000
+##-------   
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_ngmlr/
+    $ngmlr_root/ngmlr -t 12 -r $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta -q $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam - 
+  done
+    
+
+
+```
+
+```{bash sniffels_flye, eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------   
+##sniffles of rawreads
+##-------   
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_ngmlr/sniffles
+    $sniffles_root/sniffles -t 10 -m $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam -v $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw.vcf
+
+  done
+
+##-------   
+##sniffles of min5000
+##-------   
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw_min5000/rawReads2assembly_ngmlr/sniffles
+    $sniffles_root/sniffles -t 10 -m $DATA_ROOT/15_flye/assembly_${name}_raw_min5000/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam -v $DATA_ROOT/15_flye/assembly_${name}_raw_min5000/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw_min5000.vcf
+
+  done
+
+
+```
+
+####Nucmer
+In order to identify possible repeating regions between and within the genomes
+
+```{bash nucmer_flye ,eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+###==========================
+##nucmer rawreads
+###==========================
+
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/nucmer/deltaFiltered
+    
+    cd $DATA_ROOT/15_flye/assembly_${name}_raw/nucmer/
+    #nucmer -maxmatch -nosimplify $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/scaffolds.fasta $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/scaffolds.fasta 
+    cd $DATA_ROOT
+
+    #delta-filter -i 85 -l 000  $DATA_ROOT/15_flye/assembly_${name}_raw/nucmer/out.delta > $DATA_ROOT/15_flye/assembly_${name}_raw/nucmer/deltaFiltered/filtered.txt
+    grep "[[:space:]]" $DATA_ROOT/15_flye/assembly_${name}_raw/nucmer/deltaFiltered/filtered.txt | grep -v "/" > $DATA_ROOT/15_flye/assembly_${name}_raw/nucmer/deltaFiltered/filtered_cleaned.txt
+  done
+  
+###==========================
+##nucmer min5000
+###==========================
+
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/nucmer/deltaFiltered
+    
+    cd $DATA_ROOT/15_flye/assembly_${name}_min5000/nucmer/
+    #nucmer -maxmatch -nosimplify $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta 
+    cd $DATA_ROOT
+
+    #delta-filter -i 85 -l 3000  $DATA_ROOT/15_flye/assembly_${name}_min5000/nucmer/out.delta > $DATA_ROOT/15_flye/assembly_${name}_min5000/nucmer/deltaFiltered/filtered.txt
+    grep "[[:space:]]" $DATA_ROOT/15_flye/assembly_${name}_min5000/nucmer/deltaFiltered/filtered.txt | grep -v "/" > $DATA_ROOT/15_flye/assembly_${name}_min5000/nucmer/deltaFiltered/filtered_cleaned.txt
+
+  done
+  
+  
+```
+
 
 
 ##Abruijn
