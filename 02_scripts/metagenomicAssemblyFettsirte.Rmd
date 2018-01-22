@@ -55,7 +55,7 @@ These shortcut locations will be used throughout the code and therefor have to o
 
 However the fileShortucts.sh script location has to be changed with a search/replace throughout the scirpt if necessary!
 
-```{bash file shortcuts}
+```{bash file shortcuts,eval=FALSE}
 
 file=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
@@ -79,7 +79,7 @@ echo 'aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db' >>
 echo 'mOTU_ROOT=/home/bioinf/extradrv' >> $file
 echo 'metapha=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c' >> $file
 
-echo 'timestamp() {date +"%T"}'>> $file
+#echo 'timestamp() {date +"%T"}'>> $file
 
 
 ```
@@ -102,7 +102,7 @@ min5000bp_lapraz=$DATA_ROOT/01_SMRTlink_data/01_lapraz_min5000bp/reads.fastq
 The sequencing stats were obtained from the standard ouptut file of SMRTlink and are as following:
 
 
-```{r packages, warning=FALSE, echo=FALSE}
+```{r packages, warning=FALSE, echo=FALSE,eval=FALSE}
 
 .libPaths("/home/bioinf/bioinf_data/43_sovi/R/")
 
@@ -199,7 +199,7 @@ for name in cottens lapraz
 ```
 
 
-```{r stats, warning=FALSE}
+```{r stats, warning=FALSE,eval=FALSE}
 ##----------
 ##fastqc
 ##----------
@@ -450,7 +450,10 @@ for name in cottens lapraz
 
 ```
 ##flye
-
+The flye assembler creates a contigs.fasta and also an additional extended scaffolds.fasta file where it stitches together uncertain contigs.
+We create for both wheey cultueres two assemblies. 
+1. Starting the assembly with all raw subreads without quality nor length cutoff.
+2. Starting the assembly with only raw subreads > 5000bp
 ```{bash flye_assembly , eval=FALSE}
 ##---------
 ##directories
@@ -462,7 +465,7 @@ flye_root=/home/bioinf/Software/Flye_2_31/Flye/bin/flye
 blastn_root=blastn
 minimap2_root=/home/bioinf/Software/minimap2Dec06/minimap2
 DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db
+aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db/
 ##---------------
 ##creat flye directories
 ##---------------
@@ -474,10 +477,10 @@ for name in cottens lapraz
 ##---------------
 ##create min5000bp reads
 ##---------------
-##for name in cottens lapraz
-##   do
-##    prinseq-lite.pl -fastq $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq -min_len 5000 -out_good $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_min5000bp.fastq -out_bad null -out_format 1 
-##   done
+for name in cottens lapraz
+   do
+    prinseq-lite.pl -fastq $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq -min_len 5000 -out_good $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_min5000bp -out_bad null -out_format 4 
+   done
 
 
 
@@ -501,42 +504,178 @@ for name in cottens lapraz
     size=7m
   done
   
-###-----------------
-##blast rawread flye assembly (entire ncbi database)
-###-----------------
 
-for name in cottens lapraz
-   do
-     $blastn_root -num_threads 25 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query   $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/contigs.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB -out $DATA_ROOT/15_flye/assembly_${name}_raw/blast/blastAssembly.txt -evalue 0.01 -word_size 64
-   done
-
+```
+####Blast assemblies
+In the following we blasted both the contigs.fasta aswell as the scaffolds.fasta file against the prokaryotic ncbi database
+```{bash blast_flye_assemblies ,eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 ###-----------------
-##blast min5000 flye assembly (entire ncbi database)
+##blast rawread flye assembly (entire procaryotic ncbi database)
 ###-----------------
 
 for name in cottens lapraz
    do
-     $blastn_root -num_threads 25 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query   $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/contigs.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB -out $DATA_ROOT/15_flye/assembly_${name}_min5000/blast/blastAssembly.txt -evalue 0.01 -word_size 64
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/contigs.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_raw/blast/blastAssemblyaginstContigs.txt -evalue 0.01 -word_size 64
    done
 
+###-----------------
+##blast min5000 flye  assembly (entire procaryotic ncbi database)
+###-----------------
+
+for name in cottens lapraz
+   do
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_min5000/blast/blastAssemblyaginstContigs.txt -evalue 0.01 -word_size 64
+   done
+
+###-----------------
+##blast rawread flye scaffold assembly (entire procaryotic ncbi database)
+###-----------------
+
+for name in cottens lapraz
+   do
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/scaffolds.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_raw/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
+   done
+
+###-----------------
+##blast min5000 flye assembly (entire procaryotic ncbi database)
+###-----------------
+
+for name in cottens lapraz
+   do
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/contigs.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_min5000/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
+   done
+```
+
+
+####Minimap2 mapping of raw reads to the assemblies
+```{bash minmap2_rawreads_flye , eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 ##-------   
 ##rawRead mappingminimap2 to rawRead assembly
 ##-------   
 for name in cottens lapraz
    do
-     ${minimap2_root} -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/contigs.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam - 
+     ${minimap2_root} -t 2 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/contigs.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam - 
    
    done 
 
 ##-------   
-##rawRead mappingminimap2 to rawRead assembly
+##min5000bp mappingminimap2 to rawRead assembly
 ##-------   
 for name in cottens lapraz
    do
-     ${minimap2_root} -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/contigs.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam - 
+     ${minimap2_root} -t 2 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/contigs.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam - 
+   
+   done 
+   
+##-------   
+##rawRead mappingminimap2 to rawRead Scaffolds assembly
+##-------   
+for name in cottens lapraz
+   do
+     ${minimap2_root} -t 12 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/scaffolds.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam - 
    
    done 
 
+##-------   
+##rawRead mappingminimap2 to min5000 Scaffolds assembly
+##-------   
+for name in cottens lapraz
+   do
+     ${minimap2_root} -t 12 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam - 
+   
+   done   
+   
+```
+
+
+####BamQC of flye assembly
+
+```{bash bamqc_flye, eval=FALSE} 
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------   
+##bamqc mappingminimap2 to rawRead assembly (contigs)
+##-------   
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc
+
+      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam > $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_unampped.bam
+      
+     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
+      
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc --java-mem-size=2G
+      
+      grep "Globals" -A 12  $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc/global_stats.txt
+      
+      grep "Coverage per contig" -A 1000  $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc/genome_results.txt > $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc/contig_stats.txt
+ 
+      samtools index $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam
+  done
+  
+
+##-------   
+##bamqc mappingminimap2 to min500bp assembly (contigs)
+##-------   
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc
+
+      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam > $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_unampped.bam
+      
+     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
+      
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc --java-mem-size=2G
+      
+      grep "Globals" -A 12  $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc/global_stats.txt
+      
+      grep "Coverage per contig" -A 1000  $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc/genome_results.txt > $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc/contig_stats.txt
+ 
+      samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted.bam
+  done
+  
+  
+##-------   
+##bamqc mappingminimap2 to rawRead assembly (scaffolds)
+##-------   
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc_scaffolds
+
+      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam > $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam
+      
+     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
+      
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc_scaffolds --java-mem-size=2G
+      
+      grep "Globals" -A 12  $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc_scaffolds/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc_scaffolds/global_stats.txt
+      
+      grep "Coverage per contig" -A 1000  $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc/genome_results.txt > $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/bamqc/contig_stats.txt
+ 
+      samtools index $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
+  done  
+  
+##-------   
+##bamqc mappingminimap2 to rawRead assembly (scaffolds)
+##-------   
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc_scaffolds
+
+      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam > $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam
+      
+     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
+      
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc_scaffolds --java-mem-size=2G
+      
+      grep "Globals" -A 12  $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc_scaffolds/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc_scaffolds/global_stats.txt
+      
+      grep "Coverage per contig" -A 1000  $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc/genome_results.txt > $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/bamqc/contig_stats.txt
+ 
+      samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
+  done   
 ```
 
 
@@ -661,7 +800,7 @@ for name in cottens lapraz
 ```
 
 
-```{r assembly_check_inR ,message=FALSE ,warning=FALSE}
+```{r assembly_check_inR ,message=FALSE ,warning=FALSE,eval=FALSE}
 ##-----------
 ##import files
 ##-----------
