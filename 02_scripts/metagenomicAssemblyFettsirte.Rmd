@@ -36,7 +36,9 @@ Apart from a phylogenetic survey of the microbial communities the shotgun metage
 
 ##Obtions for species and strain profiling
 1. Metaphlan2: enables the profiling based on the clade-specific-marker genes(genes computed from the constantly updated prokaryotic Refseqdatabase [@Segata2013].
-2. mOTU: based on universal, single-copy marker genes which provide prokaryotic species boundaries at higher resolution than 16SrRNA [@Sunagawa2013]
+2. mOTU: based on universal, single-copy marker genes which provide prokaryotic species boundaries at higher resolution than 16SrRNA [@Sunagawa2013]. However does not work with Pacbio raw reads.
+
+
 
 ##Our study setup
 
@@ -354,22 +356,9 @@ metaphlan_lapraz <- load_metaphlan_assignment("/home/bioinf/bioinf_archive/43_so
 
 ##mOTU taxonomic annotation
 In order to test the Metaphlan output we use a second well known taxonomic profiler for metagenomic datasets.
-
-```{bash mOTU ,eval=FALSE}
-source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-for name in cottens lapraz
-   do
-      mkdir -p $DATA_ROOT/14_mOTU/${name}/mOTU_output
-      cd ${mOTU_ROOT}
-      perl mOTUs.pl --processors=12 $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq --output-directory $DATA_ROOT/14_mOTU/${name}/mOTU_output
-      cd $DATA_ROOT
-   done
-
-```
 However mOTU does not work with Pacbio data. mOTU was made only for short next generation sequencing technologies, specifically for Illumina, Ion Torrent or 454. 
 
-blast raw reads
+##blast raw reads
 
 ```{bash blastnrawRead , eval=FALSE}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
