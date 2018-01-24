@@ -183,7 +183,7 @@ echo 'mOTU_ROOT=/home/bioinf/extradrv' &gt;&gt; $file
 echo 'metapha=/home/bioinf/extradrv/biobakery-metaphlan2-d8ab9ca4244c' &gt;&gt; $file
 echo 'ngmlr_root=/home/bioinf/extradrv/ngmlr-0.2.6' &gt;&gt; $file
 echo 'sniffles_root=/home/bioinf/extradrv/Sniffles-master/bin/sniffles-core-1.0.8' &gt;&gt; $file
-
+echo 'flye_root=/home/bioinf/extradrv/Flye/bin/flye' &gt;&gt; $file
 
 #echo 'timestamp() {date +&quot;%T&quot;}'&gt;&gt; $file
 </code></pre>
@@ -323,35 +323,35 @@ for name in cottens lapraz
    do
     mkdir -p $DATA_ROOT/06_metaphlan/${name}_preassembled/{bowtie2ouput,metaphlan_profile}/
     rm $DATA_ROOT/06_metaphlan/${name}_preassembled/bowtie2ouput/metagenome_${name}_preassembled.bowtie2.bz2
-    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon_${names}.fasta --bowtie2out $DATA_ROOT/06_metaphlan/${name}_preassembled/bowtie2ouput/metagenome_${name}_preassembled.bowtie2.bz2 --nproc 12 --input_type fasta &gt; $DATA_ROOT/06_metaphlan/${name}_preassembled/metaphlan_profile/profiled_metagenome_${name}_preassembled.txt
+    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon_${name}.fasta --bowtie2out $DATA_ROOT/06_metaphlan/${name}_preassembled/bowtie2ouput/metagenome_${name}_preassembled.bowtie2.bz2 --nproc 12 --input_type fasta &gt; $DATA_ROOT/06_metaphlan/${name}_preassembled/metaphlan_profile/profiled_metagenome_${name}_preassembled.txt
    done
    
 ##----------------
 ##metaphlan Usage for min5000 reads
 ##----------------
 
-for name in cottens lapraz
-   do
-    mkdir -p $DATA_ROOT/06_metaphlan/${name}_min5000/{bowtie2ouput,metaphlan_profile}/
-    rm $DATA_ROOT/06_metaphlan/${name}_min5000/bowtie2ouput/metagenome_${name}_min5000.bowtie2.bz2
-    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads_${name}_min5000.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_min5000/bowtie2ouput/metagenome_${name}_min5000.bowtie2.bz2 --nproc 12 --input_type fastq &gt; $DATA_ROOT/06_metaphlan/${name}_min5000/metaphlan_profile/profiled_metagenome_${name}_min5000.txt
-   done   
+#for name in cottens lapraz
+#   do
+#    mkdir -p $DATA_ROOT/06_metaphlan/${name}_min5000/{bowtie2ouput,metaphlan_profile}/
+#    rm $DATA_ROOT/06_metaphlan/${name}_min5000/bowtie2ouput/metagenome_${name}_min5000.bowtie2.bz2
+#    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads_${name}_min5000.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_min5000/bowtie2ouput/metagenome_${name}_min5000.bowtie2.bz2 --nproc 12 --input_type fastq &gt; $DATA_ROOT/06_metaphlan/${name}_min5000/metaphlan_profile/profiled_metagenome_${name}_min5000.txt
+#   done   
  
 ##----------------
 ##metaphlan Usage for ccs reads
 ##----------------
 &lt;
-for name in cottens lapraz
-   do
-    mkdir -p $DATA_ROOT/06_metaphlan/${name}_ccs/{bowtie2ouput,metaphlan_profile}/
-    rm $DATA_ROOT/06_metaphlan/${name}_ccs/bowtie2ouput/metagenome_${name}_ccs.bowtie2.bz2
-    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_ccs/bowtie2ouput/metagenome_${name}_ccs.bowtie2.bz2 --nproc 12 --input_type fastq &gt; $DATA_ROOT/06_metaphlan/${name}_ccs/metaphlan_profile/profiled_metagenome_${name}_ccs.txt
-   done
+#for name in cottens lapraz
+#   do
+#    mkdir -p $DATA_ROOT/06_metaphlan/${name}_ccs/{bowtie2ouput,metaphlan_profile}/
+#    rm $DATA_ROOT/06_metaphlan/${name}_ccs/bowtie2ouput/metagenome_${name}_ccs.bowtie2.bz2
+#    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_ccs/bowtie2ouput/metagenome_${name}_ccs.bowtie2.bz2 --nproc 12 --input_type fastq &gt; $DATA_ROOT/06_metaphlan/${name}_ccs/metaphlan_profile/profiled_metagenome_${name}_ccs.txt
+#   done
 </code></pre>
 <p>From the Metaphlan2 output it seems as if only the three most common cheese species are present in the lapraz metagenome.</p>
-<pre class="r"><code>metaphlan_cottens &lt;- read_delim(&quot;~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/07_PreAssembled/20171114assembly_cottens/metaphlan/metaphlan_profile/profiled_metagenome.txt&quot;,&quot;\t&quot;, escape_double = FALSE, trim_ws = TRUE)
+<pre class="r"><code>metaphlan_cottens &lt;- load_metaphlan_assignment(&quot;/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/06_metaphlan/cottens_preassembled/metaphlan_profile/profiled_metagenome_cottens_preassembled.txt&quot;)
 
-metaphlan_lapraz &lt;- read_delim(&quot;~/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/07_PreAssembled/20171114assembly_lapraz/metaphlan/metaphlan_profile/profiled_metagenome.txt&quot;,&quot;\t&quot;, escape_double = FALSE, trim_ws = TRUE)</code></pre>
+metaphlan_lapraz &lt;- load_metaphlan_assignment(&quot;/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/06_metaphlan/lapraz_preassembled/metaphlan_profile/profiled_metagenome_lapraz_preassembled.txt&quot;)</code></pre>
 </div>
 </div>
 <div id="motu-taxonomic-annotation" class="section level2">
@@ -394,7 +394,23 @@ for name in cottens lapraz
     echo END $name = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
   done
   
-  </code></pre>
+##---------------- 
+##blast batch run
+##----------------
+date=20170124
+name=cottens
+    mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/blast
+    SECONDS=0
+    
+    LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads.txt|cut -f 1)
+    LineTrue=$(grep &quot;$LastLine&quot; -n $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta|awk -F&quot;:&quot; '{print 758929-$1}')
+    tail -$LineTrue $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta &gt; $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta
+    
+    $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_subset_${date}.txt -evalue 0.01 -word_size 12
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END $name = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+  
+</code></pre>
 </div>
 <div id="example-script" class="section level2">
 <h2>Example script</h2>
@@ -506,7 +522,7 @@ for name in cottens lapraz
 
 for name in cottens lapraz
    do
-     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/contigs.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_raw/blast/blastAssemblyaginstContigs.txt -evalue 0.01 -word_size 64
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/contigs.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_raw/blast/blastAssemblyaginstContigs.txt -evalue 0.01 -word_size 64
    done
 
 ###-----------------
@@ -515,7 +531,7 @@ for name in cottens lapraz
 
 for name in cottens lapraz
    do
-     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_min5000/blast/blastAssemblyaginstContigs.txt -evalue 0.01 -word_size 64
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_min5000/blast/blastAssemblyaginstContigs.txt -evalue 0.01 -word_size 64
    done
 
 ###-----------------
@@ -524,7 +540,7 @@ for name in cottens lapraz
 
 for name in cottens lapraz
    do
-     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/scaffolds.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_raw/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/scaffolds.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_raw/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
    done
 
 ###-----------------
@@ -533,7 +549,7 @@ for name in cottens lapraz
 
 for name in cottens lapraz
    do
-     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/contigs.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_min5000/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/contigs.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_min5000/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
    done</code></pre>
 </div>
 <div id="minimap2-mapping-of-raw-reads-to-the-assemblies" class="section level4">
@@ -705,7 +721,7 @@ for name in cottens lapraz
 for name in cottens lapraz
    do
     mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw_min5000/rawReads2assembly_ngmlr/sniffles
-    $sniffles_root/sniffles -t 10 -m $DATA_ROOT/15_flye/assembly_${name}_raw_min5000/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam -v $DATA_ROOT/15_flye/assembly_${name}_raw_min5000/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw_min5000.vcf
+    $sniffles_root/sniffles -t 10 -m $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam -v $DATA_ROOT/15_flye/assembly_${name}_raw_min5000/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw_min5000.vcf
 
   done
 </code></pre>
@@ -749,6 +765,83 @@ for name in cottens lapraz
   
   </code></pre>
 </div>
+<div id="assembling-non-mapping-reads-plasmid-assembly" class="section level4">
+<h4>assembling non mapping reads (plasmid assembly)</h4>
+<p>The reads which did not map with minimap2 to the flye assembled de novo reference genome are now taken and reassembled in a second stage.</p>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+##---------
+##plasmid assembly from rawReads
+##---------
+
+size=1m
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/{fasta,blast,RawReads2plasmidassembly_minimap2}
+      bedtools bamtofastq -i $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam -fq $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.fastq
+
+      $flye_root -t 7 --pacbio-raw $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.fastq --out-dir $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/fasta --genome-size ${size} -m 5000 -i 3 |tee $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/fasta/assemblylog.txt
+    size=1m
+  done
+
+##---------
+##plasmid assembly from min5000
+##---------
+size=1m
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/{fasta,blast,RawReads2plasmidassembly_minimap2}
+      bedtools bamtofastq -i $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam -fq $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.fastq
+
+      $flye_root -t 7 --pacbio-raw $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.fastq --out-dir $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/fasta --genome-size ${size} -m 5000 -i 3 |tee $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/fasta/assemblylog.txt
+    size=1m
+  done
+</code></pre>
+</div>
+<div id="blast-plasmid-assembly-after-flye" class="section level4">
+<h4>blast plasmid assembly (after flye)</h4>
+<p>In the following we blasted both the contigs.fasta aswell as the scaffolds.fasta file against the prokaryotic ncbi database</p>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+###-----------------
+##blast rawread flye scaffold assembly (entire procaryotic ncbi database)
+###-----------------
+
+for name in cottens lapraz
+   do
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/fasta/scaffolds.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
+   done
+
+###-----------------
+##blast min5000 flye assembly (entire procaryotic ncbi database)
+###-----------------
+
+for name in cottens lapraz
+   do
+     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/fasta/scaffolds.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $blastdb/all_prokaryotes -out $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
+   done</code></pre>
+</div>
+</div>
+<div id="plasmid-assembly-read-mapping" class="section level2">
+<h2>plasmid assembly read mapping</h2>
+<pre class="bash"><code>##-------   
+##rawRead mappingminimap2 to rawRead Scaffolds assembly
+##-------   
+for name in cottens lapraz
+   do
+
+     ${minimap2_root} -t 12 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/fasta/scaffolds.fasta $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.bam - |tee $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.log
+   samtools -flagstat $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.bam &gt;&gt; $DATA_ROOT/15_flye/assembly_${name}_raw/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.log
+   done 
+
+##-------   
+##rawRead mappingminimap2 to min5000 Scaffolds assembly
+##-------   
+for name in cottens lapraz
+   do
+
+     ${minimap2_root} -t 12 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/fasta/scaffolds.fasta $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.bam - |tee $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.log
+   samtools -flagstat $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.bam &gt;&gt; $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.log
+   done </code></pre>
 </div>
 <div id="abruijn" class="section level2">
 <h2>Abruijn</h2>
@@ -895,62 +988,12 @@ for(i in c(&quot;cottens&quot;,&quot;lapraz&quot;)){
 </div>
 <div id="minimap2-and-miniasm-from-heng-li" class="section level2">
 <h2>Minimap2 and Miniasm from Heng Li</h2>
-<p>The recently developed Minimap2 (Mapper) amd Miniasm (overlaper) are much faster as all other methods.</p>
-<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-###==========================
-##Minimap2 Overlap
-###==========================
-#$minimap2_root -x ava-pb $DATA_ROOT/01_cottens_min5000bp/reads.fastq &gt; $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/cottens_minimap.paf
-
-for name in cottens lapraz
-  do      
-    mkdir -p $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp
-    mkdir -p $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/
-    $minimap2_root -x ava-pb $DATA_ROOT/01_${name}_min5000bp/reads.fastq &gt; $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/${name}_minimap.paf
-  done
-###==========================
-##miniasm
-###==========================
-
-$miniasm_root/miniasm -f $DATA_ROOT/01_SMRTlink_data/01_cottens_min5000bp/reads.fastq $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/cottens_minimap.paf &gt; $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113/cottens_minimap.gfa
-
- for name in cottens lapraz
-  do      
-    mkdir -p $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113
-    /home/bioinf/extradrv/miniasm/miniasm -f $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads.fastq     $DATA_ROOT/03_minimap_miniasm/01_minimap/20171113/${name}_minimap.paf &gt; $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113/cottens_minimap.gfa
-    awk '/^S/{print &quot;&gt;&quot;$2&quot;\n&quot;$3}' $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113/${name}_minimap.gfa| fold &gt; $DATA_ROOT/03_minimap_miniasm/02_miniasm/20171113/${name}_minimap.fa
-    done
-    
-</code></pre>
+<p>The recently developed Minimap2 (Mapper) amd Miniasm (overlaper) are much faster as all other methods. However it did not improve the Metagenomic assembly. Therefor the chunk was removed on the 24.1.2018. The files however still exist.</p>
 </div>
 <div id="metaspades-and-megahit-as-a-debruijn-assembler-specifically-for-metagenomic-datasets" class="section level2">
 <h2>Metaspades and megahit as a Debruijn assembler specifically for metagenomic datasets</h2>
 <p>Although Debruijn assemblers are orignally meant for short and low error rate sequences we give it a try on the reads &gt;5000bp.</p>
-<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-###==========================
-##Metaspades
-###==========================
-
- for name in cottens lapraz
-  do      
-    mkdir -p $DATA_ROOT/08_metaspades/20171127_assembly_${name}/{fasta,quast,blast}
-    metaspades -t 8 -o $DATA_ROOT/08_metaspades/20171127_assembly_${name}/fasta -s $DATA_ROOT/01_SMRTlink_data/${name}/reads_min5000bp.fastq
-  done
-
-###==========================
-##megahit
-###==========================
- for name in cottens lapraz
-  do      
-    mkdir -p $DATA_ROOT/10_megahit/20171127_assembly_${name}/{fasta,quast,blast}
-    rm -r $DATA_ROOT/10_megahit/20171127_assembly_${name}/fasta
-    megahit -r $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta -o $DATA_ROOT/10_megahit/20171127_assembly_${name}/fasta -m 60996138188 -t 12 --presets meta-sensitive
-  done
- 
-</code></pre>
-<p>Metaspades does not work for pacbio only data.</p>
+<p>Nor the Metaspades aswell as the megahit assembly did not work for the pacbio only data. Therefor it was removed on the 24.1.2018</p>
 </div>
 <div id="sprai-error-correction" class="section level2">
 <h2>sprai error correction</h2>
@@ -1721,7 +1764,7 @@ date=20171114
 for name in cottens lapraz
    do
       mkdir -p $DATA_ROOT/12_humann2/{db,$name_rawReads}
-     humann2 --threads ${threads} --nucleotide-database $DATA_ROOT/12_humann2/db/chocophlan/ --protein-database $DATA_ROOT/12_humann2/db/uniref/ --metaphlan $metapha/metaphlan2.py --taxonomic-profile $DATA_ROOT/06_metaphlan/${name}_raw/metaphlan_profile/profiled_metagenome_${name}_raw.txt --diamond /home/bioinf/extradrv --input $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq --output $OUTPUT_DIR $DATA_ROOT/12_humann2/${name}_rawReads/
+     humann2 --threads ${threads} --nucleotide-database $DATA_ROOT/12_humann2/db/chocophlan/ --protein-database $DATA_ROOT/12_humann2/db/uniref/ --metaphlan $metapha/metaphlan2.py --taxonomic-profile $DATA_ROOT/06_metaphlan/${name}_raw/metaphlan_profile/profiled_metagenome_${name}_raw.txt --diamond /home/bioinf/extradrv --input $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon_${name}.fasta --output $OUTPUT_DIR $DATA_ROOT/12_humann2/${name}_rawReads/
    done  
 </code></pre>
 <p>Every humann2 mapping step (1. Chocophlan,Metaphlan,proteindb,..) is done with bowtie and parameter settings for Illumina reads.</p>
