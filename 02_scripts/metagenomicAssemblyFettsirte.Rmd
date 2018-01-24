@@ -29,16 +29,6 @@ Sequencing the entire DNA potential within the environment of interest has multi
 6.Fundamental basis for all further 'omic analysis and functional analysis of specific environment. 
 7. Without complete genomes of the specific strains, studies are limited to the study of targeted genes or SNPs. Final ability to study large structural variation (relocations and horizontal gene transfer), which potentially have sofar unprecedented effects on the phenotype. 
 
-##1. Taxon profiling from metagenomic data
-Knowning the organsims within a community is often the first and for many studies the most important information. For shotgun metagenome studies this is often done before assembling the sequencing data, as only the most abundant species can be de novo assembled [@Driscoll2017]. The key advantage of the metagenomic approach over a targeted amplicon approach is mainly the high resolution. A palette of different methods have enabled to profile strain level diversity from metagenomic data. However this approach is often limited to the thoroughness of the sequence database.
-
-Apart from a phylogenetic survey of the microbial communities the shotgun metagenomic approach enables the de novo assembly of the dominant species which was sofar mainly restricted to cultureable species.  Thereby enabling the analysis of structural variation, genomic linkage of functions to specific genes and organisms and building the necassary basis for further omics analysis of this microbial community. In future with studies including multiple replicates the theoretical understanding of microbial communities could change to a core metagenome approach idenpednent of specific organsims but rather on the basis of occuring genes or functions.
-
-##Obtions for species and strain profiling
-1. Metaphlan2: enables the profiling based on the clade-specific-marker genes(genes computed from the constantly updated prokaryotic Refseqdatabase [@Segata2013].
-2. mOTU: based on universal, single-copy marker genes which provide prokaryotic species boundaries at higher resolution than 16SrRNA [@Sunagawa2013]. However does not work with Pacbio raw reads.
-
-
 
 ##Our study setup
 
@@ -281,11 +271,19 @@ multiqc  -f --title mulitQC_fasta --outdir $DATA_ROOT/01_SMRTlink_data/MultiQc/ 
         $DATA_ROOT/01_SMRTlink_data/cottens_ccs/fastqc \
         $DATA_ROOT/01_SMRTlink_data/lapraz_ccs/fastqc 
 ```
+#1. Taxon profiling from metagenomic data
+Knowning the organsims within a community is often the first and for many studies the most important information. For shotgun metagenome studies this is often done before assembling the sequencing data, as only the most abundant species can be de novo assembled [@Driscoll2017]. The key advantage of the metagenomic approach over a targeted amplicon approach is mainly the high resolution. A palette of different methods have enabled to profile strain level diversity from metagenomic data. However this approach is often limited to the thoroughness of the sequence database.
+
+Apart from a phylogenetic survey of the microbial communities the shotgun metagenomic approach enables the de novo assembly of the dominant species which was sofar mainly restricted to cultureable species.  Thereby enabling the analysis of structural variation, genomic linkage of functions to specific genes and organisms and building the necassary basis for further omics analysis of this microbial community. In future with studies including multiple replicates the theoretical understanding of microbial communities could change to a core metagenome approach idenpednent of specific organsims but rather on the basis of occuring genes or functions.
+
+Further getting an idea of the metagenome size and genetic divergence is potentially crucial for the parametrisization of the assemblers.
+
+##Obtions for species and strain profiling
+1. Metaphlan2: enables the profiling based on the clade-specific-marker genes(genes computed from the constantly updated prokaryotic Refseqdatabase [@Segata2013].
+2. mOTU: based on universal, single-copy marker genes which provide prokaryotic species boundaries at higher resolution than 16SrRNA [@Sunagawa2013]. However does not work with Pacbio raw reads.
 
 
-##Metaphlan2
-In a first step we want to estimate the diversity of microorganisms in the metagenomic sample. 
-Getting an idea what metagenome size and genetic divergence is potentially crucial for parametrisizing of the assemblers.
+###Metaphlan2
 
 Metaphlan2 is a tool based on the blastdb and specifically of uniq genes for each taxonomic classes therein. 
 However this method was orignally developed for the usage with Illumina short read technology. 
@@ -319,34 +317,11 @@ for name in cottens lapraz
     $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon_${name}.fasta --bowtie2out $DATA_ROOT/06_metaphlan/${name}_preassembled/bowtie2ouput/metagenome_${name}_preassembled.bowtie2.bz2 --nproc 12 --input_type fasta > $DATA_ROOT/06_metaphlan/${name}_preassembled/metaphlan_profile/profiled_metagenome_${name}_preassembled.txt
    done
    
-##----------------
-##metaphlan Usage for min5000 reads
-##----------------
-
-#for name in cottens lapraz
-#   do
-#    mkdir -p $DATA_ROOT/06_metaphlan/${name}_min5000/{bowtie2ouput,metaphlan_profile}/
-#    rm $DATA_ROOT/06_metaphlan/${name}_min5000/bowtie2ouput/metagenome_${name}_min5000.bowtie2.bz2
-#    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/01_${name}_min5000bp/reads_${name}_min5000.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_min5000/bowtie2ouput/metagenome_${name}_min5000.bowtie2.bz2 --nproc 12 --input_type fastq > $DATA_ROOT/06_metaphlan/${name}_min5000/metaphlan_profile/profiled_metagenome_${name}_min5000.txt
-#   done   
- 
-##----------------
-##metaphlan Usage for ccs reads
-##----------------
-<
-#for name in cottens lapraz
-#   do
-#    mkdir -p $DATA_ROOT/06_metaphlan/${name}_ccs/{bowtie2ouput,metaphlan_profile}/
-#    rm $DATA_ROOT/06_metaphlan/${name}_ccs/bowtie2ouput/metagenome_${name}_ccs.bowtie2.bz2
-#    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_ccs/bowtie2ouput/metagenome_${name}_ccs.bowtie2.bz2 --nproc 12 --input_type fastq > $DATA_ROOT/06_metaphlan/${name}_ccs/metaphlan_profile/profiled_metagenome_${name}_ccs.txt
-#   done
-
-
-
 ```
 From the Metaphlan2 output it seems as if only the three most common cheese species are present in the lapraz metagenome.
 
 ```{r metaphlan2_analysis , warning=FALSE,eval=FALSE}
+install.packages("Metacomb")
 
 metaphlan_cottens <- load_metaphlan_assignment("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/06_metaphlan/cottens_preassembled/metaphlan_profile/profiled_metagenome_cottens_preassembled.txt")
 
@@ -358,7 +333,9 @@ metaphlan_lapraz <- load_metaphlan_assignment("/home/bioinf/bioinf_archive/43_so
 In order to test the Metaphlan output we use a second well known taxonomic profiler for metagenomic datasets.
 However mOTU does not work with Pacbio data. mOTU was made only for short next generation sequencing technologies, specifically for Illumina, Ion Torrent or 454. 
 
-##blast raw reads
+##blast raw reads against the entire ncbi database
+Blasting all RawReads against the ncbi database should give the most comprehensive taxonomic analysis of the present data. 
+This is however a very time consuming step. Especially as the we need to reduce the wordsize of the blast to 12 in order to account for the high error rate of the pacbio RawReads.
 
 ```{bash blastnrawRead , eval=FALSE}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
@@ -1032,87 +1009,71 @@ Therefor it was removed on the 24.1.2018
 
 ##sprai error correction
 Sprai is able to do the error correction without assembly.
+Additionally spray can check for circularity of an assembly.
+However this code chunk was removed on the 24.1.2018.
 
-```{bash sprai_error_cor ,eval=FALSE}
-source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+#Binning reads/preassembled reads 
 
-###==========================
-##sprai
-###==========================
- for name in cottens lapraz
-  do 
-    mkdir -p $DATA_ROOT/09_sprai/preassembly_${name}/fasta
-    #cp $sprai_root/ec.spec_${name} $DATA_ROOT/09_sprai/preassembly_${name}/
-    $sprai_root/ezez_vx1.pl $DATA_ROOT/09_sprai/preassembly_${name}/ec.spec_${name} -ec_only > log 2>&1 
-  done
 
-for name in cottens lapraz
-  do 
-    mkdir -p $DATA_ROOT/09_sprai/preassembly_${name}/fasta
-    $sprai_root/ezez4makefile_v4.pl $DATA_ROOT/09_sprai/preassembly_${name}/ec.spec_${name} 
-    sudo make -j 8 -f Makefile ec_only > log 2>&1 
-  done
-###==========================
-##check circularity
-###==========================
-for name in cottens lapraz
-  do 
-    $sprai_root/check_circularity.pl $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/polished_1.fasta $DATA_ROOT/05_abruijn/assembly_cottens_min5000bp/fasta/multifasta --force > $DATA_ROOT/05_abruijn/assembly_cottens/fasta/cirularity.txt
-  done
-  
+##Own Blobology on preassemblies
+The blobolgoy is based on te preassembled reads.
+We need the following data:
+1. Preassembled reads coverage (#RawReads minimap2 aligned to preassembled reads)
+2. GC% of preassembled reads
+3. Minimap2 aligning of preassembled reads to Flye assembly
 
-```
-
-##Blobology on preassemblies
+After this we make a plot in R. 
 
 ```{bash blobology_preassembly ,eval=FALSE}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###==========================
-##run blobology
+##1. Preassembled reads coverage 
 ###==========================
+##-------   
+##index reference genome
+##-------   
 
-####==========================================================================
-#### GENERAL CONFIG VARIABLES
-####==========================================================================
-name=cottens
+for name in cottens lapraz
+   do
+    $minimap2_root -d $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.mmi $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta
+   done
 
-NUMPROC=8
-KMER=61
-BLASTDB=$blastdb/all_prokaryotes
-TAXDUMP=$DATA_ROOT/
-ASSEMBLY=$DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta
+##-------   
+##read mapping
+##-------   
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/16_blobologyOwn/preassembly_${name}/{01_minimapRawReads,02_GC,03_minimapAgainstFlye}
+     mkdir -p $DATA_ROOT/16_blobologyOwn/preassembly_${name}/01_minimapRawReads/bamqc
+ 
+     ${minimap2_root} -ax map-pb $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/16_blobologyOwn/preassembly_${name}/01_minimapRawReads/raw_${name}_mapped_preassembly_sorted.bam - | tee $DATA_ROOT/16_blobologyOwn/preassembly_${name}/01_minimapRawReads/raw_${name}_mapped_preassembly_sorted.log
+     
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/16_blobologyOwn/preassembly_${name}/01_minimapRawReads/raw_${name}_mapped_preassembly_sorted.bam -outdir $DATA_ROOT/16_blobologyOwn/preassembly_${name}/01_minimapRawReads/bamqc/ --java-mem-size=2G
+     
+   done 
 
-####==========================================================================
-#### STEP 2, find best blast hits of a random sample of contigs
-####==========================================================================
-blastn -task megablast -query $ASSEMBLY -db $BLASTDB -evalue 1e-5 -num_threads $NUMPROC -max_target_seqs 1 -outfmt '6 qseqid staxids' -out $ASSEMBLY.nt.1e-5.megablast
+###==========================
+##2. GC% of preassembled reads 
+###==========================
+for name in cottens lapraz
+   do
+    prinseq-lite.pl -stats_dinuc $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta > $DATA_ROOT/16_blobologyOwn/preassembly_${name}/02_GC/gc_content_${name}_preassemeled.txt
+  done
 
-bowtie2-build $ASSEMBLY $ASSEMBLY
+###==========================
+##3. Minimap2 aligning of preassembled reads to Flye assembly
+###==========================
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/bamqc
 
-for LIBNAME in cottens lapraz
-do
-    bowtie2 -x $ASSEMBLY --very-fast-local -k 1 -t -p 12 --reorder --mm \
-        -U $DATA_ROOT/01_SMRTlink_data/${name}/reads.fastq \
-        | samtools view -S -b -T $ASSEMBLY - > $ASSEMBLY.$LIBNAME.bowtie2.bam
-done
-
-####==========================================================================
-#### STEP 4, combine BAM files and blast hits to create data file for plotting
-####==========================================================================
-
-
-$blob_root/gc_cov_annotate.pl \
-  --blasttaxid $ASSEMBLY.nt.1e-5.megablast \
-  --assembly $ASSEMBLY --bam *.bam --out blobplot.txt \
-  --taxdump $TAXDUMP --taxlist species order phylum superkingdom
-
-####==========================================================================
-#### STEP 4, create blobplots using R, or visualise using blobsplorer
-####==========================================================================
-
-$blob_root/makeblobplot.R blobplot.txt 0.01 taxlevel_order
-
+    ${minimap2_root} -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffold.fasta $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta |samtools sort -@8 -O BAM -o $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/preassembled_${name}_mapped_FlyeAssembly_sorted.bam - | tee $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/preassembled_${name}_mapped_FlyeAssembly_sorted.log
+    
+    $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/preassembled_${name}_mapped_FlyeAssembly_sorted.bam -outdir $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/bamqc/ --java-mem-size=2G
+     
+    
+  done
 
 ```
 
@@ -1341,7 +1302,7 @@ I a proceeding step we create a BLAST database of the assembled metagenomic cont
 ```{bash minimap_rawreads_assembly, eval=FALSE}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 ##=============
-##Abruijn
+##minimap2
 ##=============
 
 ##-------   
