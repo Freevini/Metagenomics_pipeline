@@ -47,7 +47,7 @@ These shortcut locations will be used throughout the code and therefor have to o
 
 However the fileShortucts.sh script location has to be changed with a search/replace throughout the scirpt if necessary!
 
-```{bash file shortcuts,eval=FALSE}
+```{bash file_shortcuts,eval=FALSE}
 
 file=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
@@ -80,7 +80,8 @@ echo 'flye_root=/home/bioinf/extradrv/Flye/bin/flye' >> $file
 ```
 ##File locations
 
-```{bash file locations ,eval=FALSE}
+
+```{bash file_locations ,eval=FALSE}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##rawData
@@ -93,25 +94,36 @@ min5000bp_lapraz=$DATA_ROOT/01_SMRTlink_data/01_lapraz_min5000bp/reads.fastq
 
 ```
 
+##File names
+```{bash fileNames, eval=FALSE}
+
+```
+
+
 ##Sequencing stats
 The sequencing stats were obtained from the standard ouptut file of SMRTlink and are as following:
 
 
-```{r packages, warning=FALSE, echo=FALSE,eval=FALSE}
+```{r packages, warning=FALSE, echo=TRUE,eval=TRUE}
 
 .libPaths("/home/bioinf/bioinf_data/43_sovi/R/")
 
 suppressPackageStartupMessages(library("ggplot2"))
 suppressPackageStartupMessages(library("rjson"))
-suppressPackageStartupMessages(library("knitr"))
+#suppressPackageStartupMessages(library("knitr"))
 #source("https://bioconductor.org/biocLite.R")
 #suppressPackageStartupMessages(library("Repitools"))
 suppressPackageStartupMessages(library("curatedMetagenomicData"))
 suppressPackageStartupMessages(library("fastqcr"))
 suppressPackageStartupMessages(library("readr"))
 suppressPackageStartupMessages(library("dplyr"))
-suppressPackageStartupMessages(library("MetaComp"))
+#suppressPackageStartupMessages(library("MetaComp"))
+suppressPackageStartupMessages(library("ggplot2"))
+suppressPackageStartupMessages(library("gridExtra"))
 
+
+
+source("/home/bioinf/bioinf_data/43_sovi/R_functions/R_functions/g_legend.R")
 
 # biocLite("curatedMetagenomicData")
 # biocLite("fastqcr")
@@ -378,6 +390,27 @@ name=cottens
     $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_subset_${date}.txt -evalue 0.01 -word_size 12
     echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
     echo END $name = `date +"%Y-%m-%d %H:%M:%S"`
+    
+
+##---------------- 
+##blast batch run reverse (michis machine)
+##----------------
+
+#tail -367062 $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_${date}.fasta
+
+
+date=20170125
+name=cottens
+    mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/blast
+    #SECONDS=0
+    
+    #LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads.txt|cut -f 1)
+    #LineTrue=$(grep "$LastLine" -n $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta|awk -F":" '{print 758929-$1}')
+    #tail -$LineTrue $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta
+    
+    $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_${date}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt_duplicate -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_reverse_subset_${date}.txt -evalue 0.01 -word_size 12
+    #echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
+    #echo END $name = `date +"%Y-%m-%d %H:%M:%S"`
   
 
 ```
@@ -1013,7 +1046,7 @@ Additionally spray can check for circularity of an assembly.
 However this code chunk was removed on the 24.1.2018.
 
 #Binning reads/preassembled reads 
-
+Different binning approachs have been applied. Amongst the most common ones are: the Tetranucleotide binning [@Iverson2012] and the coverage based binning [@Albersen2013]. However it has been noticed that both entities applie only to entities with a extreme skew. Further it is unlikely that both the coverage aswell as the tetranucleotide distribution is consisten over the entire genome. Therefore these methods might additionally bias the assembly. 
 
 ##Own Blobology on preassemblies
 The blobolgoy is based on te preassembled reads.
@@ -1053,12 +1086,19 @@ for name in cottens lapraz
      
    done 
 
+for name in cottens lapraz
+   do 
+    samtools view $DATA_ROOT/16_blobologyOwn/preassembly_${name}/01_minimapRawReads/raw_${name}_mapped_preassembly_sorted.bam |cut -f 3 |sort |uniq -c |awk '{$1=$1};1'| sed -e 's/ /\t/g' > $DATA_ROOT/16_blobologyOwn/preassembly_${name}/01_minimapRawReads/coverage_${name}_preassembled.txt
+   done
+
 ###==========================
 ##2. GC% of preassembled reads 
 ###==========================
 for name in cottens lapraz
    do
-    prinseq-lite.pl -stats_dinuc $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta > $DATA_ROOT/16_blobologyOwn/preassembly_${name}/02_GC/gc_content_${name}_preassemeled.txt
+    infoseq -nocolumns -delimiter , -auto -only -name -length -pgc $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta > $DATA_ROOT/16_blobologyOwn/preassembly_${name}/02_GC/gc_content_${name}_preassemeled.txt
+   
+    #prinseq-lite.pl -stats_dinuc -fasta $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta > $DATA_ROOT/16_blobologyOwn/preassembly_${name}/02_GC/gc_content_${name}_preassemeled.txt
   done
 
 ###==========================
@@ -1068,14 +1108,136 @@ for name in cottens lapraz
    do
      mkdir -p $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/bamqc
 
-    ${minimap2_root} -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffold.fasta $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta |samtools sort -@8 -O BAM -o $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/preassembled_${name}_mapped_FlyeAssembly_sorted.bam - | tee $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/preassembled_${name}_mapped_FlyeAssembly_sorted.log
+    ${minimap2_root} -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta |samtools sort -@8 -O BAM -o $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/preassembled_${name}_mapped_FlyeAssembly_sorted.bam - | tee $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/preassembled_${name}_mapped_FlyeAssembly_sorted.log
     
     $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/preassembled_${name}_mapped_FlyeAssembly_sorted.bam -outdir $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/bamqc/ --java-mem-size=2G
-     
     
-  done
+    done
+
+for name in cottens lapraz
+   do 
+    samtools view $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/preassembled_${name}_mapped_FlyeAssembly_sorted.bam |awk '{print $1 , $3}'  > $DATA_ROOT/16_blobologyOwn/preassembly_${name}/03_minimapAgainstFlye/mapping_${name}_preassembled.txt
+   done
+   
 
 ```
+
+```{r analysis_blobology,eval=TRUE,warning=FALSE}
+##preassembly coverage
+coverage_preassembly_cottens <- read_delim("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/16_blobologyOwn/preassembly_cottens/01_minimapRawReads/coverage_cottens_preassembled.txt", "\t", escape_double = FALSE, col_names = c("hits","name"),  trim_ws = TRUE)
+coverage_preassembly_cottens <- coverage_preassembly_cottens[-1,]
+coverage_preassembly_lapraz <- read_delim("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/16_blobologyOwn/preassembly_lapraz/01_minimapRawReads/coverage_lapraz_preassembled.txt", "\t", escape_double = FALSE, col_names = c("hits","name"),  trim_ws = TRUE)
+coverage_preassembly_lapraz <- coverage_preassembly_lapraz[-1,]
+
+##gc content 
+gc_cottens <- read_csv("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/16_blobologyOwn/preassembly_cottens/02_GC/gc_content_cottens_preassemeled.txt")
+gc_lapraz <- read_csv("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/16_blobologyOwn/preassembly_lapraz/02_GC/gc_content_lapraz_preassemeled.txt")  
+
+##reference contig 
+
+mapping_cottens_preassembled <- read_delim("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/16_blobologyOwn/preassembly_cottens/03_minimapAgainstFlye/mapping_cottens_preassembled.txt",  " ", escape_double = FALSE, col_names = c("read","scaffold"),trim_ws = TRUE)
+mapping_lapraz_preassembled <- read_delim("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/16_blobologyOwn/preassembly_lapraz/03_minimapAgainstFlye/mapping_lapraz_preassembled.txt",  " ", escape_double = FALSE, col_names = c("read","scaffold"),trim_ws = TRUE) 
+
+##ordering contigs Cottens
+all(mapping_cottens_preassembled$read %in% coverage_preassembly_cottens$name)
+all(mapping_cottens_preassembled$read %in% gc_cottens$Name)
+
+no_cov <- nrow(mapping_cottens_preassembled)-nrow(coverage_preassembly_cottens)
+print(c(no_cov,"contigs do not have a coverage"))
+
+gc_cottens <- gc_cottens[match(coverage_preassembly_cottens$name,gc_cottens$Name),]
+mapping_cottens_preassembled <- mapping_cottens_preassembled[match(coverage_preassembly_cottens$name,mapping_cottens_preassembled$read),]
+
+all(mapping_cottens_preassembled$read %in% coverage_preassembly_cottens$name)
+all(mapping_cottens_preassembled$read %in% gc_cottens$Name)
+
+left_contigs <- nrow(mapping_cottens_preassembled)
+print(c("Finally, there are ",left_contigs,"contigs left"))
+
+
+##ordering contigs lapraz
+
+all(mapping_lapraz_preassembled$read %in% coverage_preassembly_lapraz$name)
+all(mapping_lapraz_preassembled$read %in% gc_lapraz$Name)
+
+no_cov <- nrow(mapping_lapraz_preassembled)-nrow(coverage_preassembly_lapraz)
+print(c(no_cov,"contigs do not have a coverage"))
+
+gc_lapraz <- gc_lapraz[match(coverage_preassembly_lapraz$name,gc_lapraz$Name),]
+mapping_lapraz_preassembled <- mapping_lapraz_preassembled[match(coverage_preassembly_lapraz$name,mapping_lapraz_preassembled$read),]
+
+all(mapping_lapraz_preassembled$read %in% coverage_preassembly_lapraz$name)
+all(mapping_lapraz_preassembled$read %in% gc_lapraz$Name)
+
+left_contigs <- nrow(mapping_lapraz_preassembled)
+print(c("Finally, there are ",left_contigs,"contigs left"))
+
+##creat dataframe cottens
+
+final_df_cottens <- data.frame(name=mapping_cottens_preassembled$read,coverage=coverage_preassembly_cottens$hits,gc=gc_cottens$`%GC`,length=gc_cottens$Length,mapping=mapping_cottens_preassembled$scaffold)
+
+##creat dataframe lapraz
+
+final_df_lapraz <- data.frame(name=mapping_lapraz_preassembled$read,coverage=coverage_preassembly_lapraz$hits,gc=gc_lapraz$`%GC`,length=gc_lapraz$Length,mapping=mapping_lapraz_preassembled$scaffold)
+
+##plot cottens
+
+scatterPlot <- ggplot(data = final_df_cottens,aes(x=coverage,y=gc,color=mapping))+
+  geom_point()+
+  theme_bw()+
+  theme(legend.title=element_blank())
+
+# Marginal density plot of x (top panel)
+xdensity <- ggplot(data = final_df_cottens,aes(x=coverage,fill=mapping)) + 
+  geom_density(alpha=.5) + 
+  scale_x_continuous(name="") +
+  theme_bw()+
+  theme(legend.position="none",axis.text.x=element_blank())
+# xdensity
+# Marginal density plot of y (right panel)
+ydensity <- ggplot(data = final_df_cottens, aes(x=gc, fill=mapping)) + 
+  geom_density(alpha=.5) + 
+  scale_x_continuous(name="")+
+  theme_bw()+
+  coord_flip()+
+  theme(legend.position="none",axis.text.x=element_blank())
+# ydensity
+
+legend <- g_legend(scatterPlot)
+
+grid.arrange(xdensity, legend,scatterPlot+theme(legend.position="none"), ydensity, 
+        ncol=2, nrow=2, widths=c(4, 1.4), heights=c(1.4, 4))
+
+##plot lapraz
+# 
+# scatterPlot <- ggplot(data = final_df_lapraz,aes(x=coverage,y=gc,color=mapping))+
+#   geom_point()+
+#   theme_bw()+
+#   theme(legend.title=element_blank())
+# 
+# # Marginal density plot of x (top panel)
+# xdensity <- ggplot(data = final_df_lapraz,aes(x=coverage,fill=mapping)) + 
+#   geom_density(alpha=.5) + 
+#   scale_x_continuous(name="") +
+#   theme_bw()+
+#   theme(legend.position="none",axis.text.x=element_blank())
+# # xdensity
+# # Marginal density plot of y (right panel)
+# ydensity <- ggplot(data = final_df_lapraz, aes(x=gc, fill=mapping)) + 
+#   geom_density(alpha=.5) + 
+#   scale_x_continuous(name="")+
+#   theme_bw()+
+#   coord_flip()+
+#   theme(legend.position="none",axis.text.x=element_blank())
+# # ydensity
+# 
+# legend <- g_legend(scatterPlot)
+# 
+# grid.arrange(xdensity, legend,scatterPlot+theme(legend.position="none"), ydensity, 
+#         ncol=2, nrow=2, widths=c(4, 1.4), heights=c(1.4, 4))
+
+```
+The preassembled reads divide very well between the different contigs according to the GC. However there are certain preassembled reads which are intermediat or do not follow this pattern at all. Therefore binning the preassembled reads before the assembly would not make sense and most likely bias the assembly process.  
 
 ##Nucmer to align different assemblies against eachother
 
