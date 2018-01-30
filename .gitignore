@@ -15,3 +15,7 @@ assembly/
 reads_fastqc/
 15_flye/
 99_Extras/
+16_blobologyOwn/
+17_PanPhlAn/
+18_NCBIGenomes/
+19_mauve/

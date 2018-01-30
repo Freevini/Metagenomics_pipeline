@@ -74,6 +74,9 @@ echo 'ngmlr_root=/home/bioinf/extradrv/ngmlr-0.2.6' >> $file
 echo 'sniffles_root=/home/bioinf/extradrv/Sniffles-master/bin/sniffles-core-1.0.8' >> $file
 echo 'flye_root=/home/bioinf/extradrv/Flye/bin/flye' >> $file
 echo 'pacbio_root=/home/bioinf/extradrv/opt/pacbio/smrtlink/smrtcmds/bin' >> $file
+echo 'mauve_root=/home/bioinf/extradrv/mauve_snapshot_2015-02-13/linux-x64/' >> $file
+
+
 
 echo 'ASSEMBLY_FLYE_POLISHED_FASTA=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/15_flye/assembly_cottens_min5000/SmrtLink_polished_reference/reference_cottens.fasta' >> $file
 
@@ -307,7 +310,6 @@ Metaphlan2 is a tool based on the blastdb and specifically of uniq genes for eac
 However this method was orignally developed for the usage with Illumina short read technology. 
 In the following we aim to test how well the taxonomic classification/profiling works for raw long read sequencing data. 
 
-####Methods
 For the taxonmic profiling we use the preassemble reads. These reads are both longer aswell as error corrected which should increase the power of the results.  
 
 ```{bash metaphlan2 , warning=F, eval=F}
@@ -339,6 +341,7 @@ for name in cottens lapraz
 From the Metaphlan2 output it seems as if only the three most common cheese species are present in the lapraz metagenome.
 
 ```{r metaphlan2_analysis , warning=FALSE,eval=FALSE}
+
 install.packages("Metacomb")
 
 metaphlan_cottens <- load_metaphlan_assignment("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/06_metaphlan/cottens_preassembled/metaphlan_profile/profiled_metagenome_cottens_preassembled.txt")
@@ -346,6 +349,119 @@ metaphlan_cottens <- load_metaphlan_assignment("/home/bioinf/bioinf_archive/43_s
 metaphlan_lapraz <- load_metaphlan_assignment("/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/06_metaphlan/lapraz_preassembled/metaphlan_profile/profiled_metagenome_lapraz_preassembled.txt")
 
 ```
+
+##PanPhlAn
+PanPhlAn is a very recent species/strain profiler for shotgun metagenomic data. 
+
+In a first step, they have a good manual how to batch download a bunch of genomes from NCBI. 
+
+```{bash batchDownloadNCBI ,eval=FALSE,echo=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+# 1) download the complete list of available bacteria genomes
+mkdir -p $DATA_ROOT/17_PanPhlAn/{Lhel,Ldel,Sthe}
+location=$pwd
+cd $DATA_ROOT/17_PanPhlAn
+wget -e use_proxy=yes -e ftp_proxy=proxy-bvcol.admin.ch:8080  ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
+cd $location
+
+# 2) extract all directory-names from file assembly_summary.txt related to a species, for example all links to Bacteroides ovatus
+
+grep -E 'Lactobacillus helveticus' assembly_summary.txt | cut -f 20 > $DATA_ROOT/17_PanPhlAn/Lhel/lhev.txt
+grep -E 'Lactobacillus delbrueckii' assembly_summary.txt | cut -f 20 > $DATA_ROOT/17_PanPhlAn/Ldel/Ldel.txt
+grep -E 'Streptococcus thermophilus ' assembly_summary.txt | cut -f 20 > $DATA_ROOT/17_PanPhlAn/Sthe/Sthe.txt
+
+
+# 3) create download scripts
+
+
+awk 'BEGIN{FS=OFS="/";filesuffix="genomic.fna.gz"}{ftpdir=$0;asm=$10;file=asm"_"filesuffix;print "wget -e use_proxy=yes -e ftp_proxy=proxy-bvcol.admin.ch:8080 "ftpdir,file}' $DATA_ROOT/17_PanPhlAn/Lhel/lhev.txt > $DATA_ROOT/17_PanPhlAn/Lhel/lhev_download_fna_files.sh
+awk 'BEGIN{FS=OFS="/";filesuffix="genomic.gff.gz"}{ftpdir=$0;asm=$10;file=asm"_"filesuffix;print "wget -e use_proxy=yes -e ftp_proxy=proxy-bvcol.admin.ch:8080 "ftpdir,file}' $DATA_ROOT/17_PanPhlAn/Lhel/lhev.txt  > $DATA_ROOT/17_PanPhlAn/Lhel/lhev_download_gff_files.sh
+
+awk 'BEGIN{FS=OFS="/";filesuffix="genomic.fna.gz"}{ftpdir=$0;asm=$10;file=asm"_"filesuffix;print "wget -e use_proxy=yes -e ftp_proxy=proxy-bvcol.admin.ch:8080 "ftpdir,file}' $DATA_ROOT/17_PanPhlAn/Ldel/Ldel.txt > $DATA_ROOT/17_PanPhlAn/Ldel/Ldel_download_fna_files.sh
+awk 'BEGIN{FS=OFS="/";filesuffix="genomic.gff.gz"}{ftpdir=$0;asm=$10;file=asm"_"filesuffix;print "wget -e use_proxy=yes -e ftp_proxy=proxy-bvcol.admin.ch:8080 "ftpdir,file}' $DATA_ROOT/17_PanPhlAn/Ldel/Ldel.txt > $DATA_ROOT/17_PanPhlAn/Ldel/Ldel_download_gff_files.sh
+
+awk 'BEGIN{FS=OFS="/";filesuffix="genomic.fna.gz"}{ftpdir=$0;asm=$10;file=asm"_"filesuffix;print "wget -e use_proxy=yes -e ftp_proxy=proxy-bvcol.admin.ch:8080 "ftpdir,file}' $DATA_ROOT/17_PanPhlAn/Sthe/Sthe.txt > $DATA_ROOT/17_PanPhlAn/Sthe/Sthe_download_fna_files.sh
+awk 'BEGIN{FS=OFS="/";filesuffix="genomic.gff.gz"}{ftpdir=$0;asm=$10;file=asm"_"filesuffix;print "wget -e use_proxy=yes -e ftp_proxy=proxy-bvcol.admin.ch:8080 "ftpdir,file}' $DATA_ROOT/17_PanPhlAn/Sthe/Sthe.txt > $DATA_ROOT/17_PanPhlAn/Sthe/Sthe_download_gff_files.sh
+
+
+
+# run download
+source $DATA_ROOT/17_PanPhlAn/Lhel/lhev_download_fna_files.sh
+source $DATA_ROOT/17_PanPhlAn/Lhel/lhev_download_gff_files.sh 
+
+source $DATA_ROOT/17_PanPhlAn/Ldel/Ldel_download_fna_files.sh
+source $DATA_ROOT/17_PanPhlAn/Ldel/Ldel_download_gff_files.sh
+
+source $DATA_ROOT/17_PanPhlAn/Sthe/Sthe_download_fna_files.sh
+source $DATA_ROOT/17_PanPhlAn/Sthe/Sthe_download_gff_files.sh 
+
+
+
+ls
+assembly_summary.txt
+ download_dbff_files.sh
+ download_fna_files.sh
+ ftpdirpaths
+ GCF_000178275.1_ASM17827v1_genomic.fna.gz
+ GCF_000178275.1_ASM17827v1_genomic.gff.gz
+ GCF_000218325.1_Bact_ovat_3_8_47FAA_V1_genomic.fna.gz
+ GCF_000218325.1_Bact_ovat_3_8_47FAA_V1_genomic.gff.gz
+ GCF_000273195.1_Bact_ovat_CL02T12C04_V1_genomic.fna.gz
+ GCF_000273195.1_Bact_ovat_CL02T12C04_V1_genomic.gff.gz
+ GCF_000273215.1_Bact_ovat_CL03T12C18_V1_genomic.fna.gz
+ GCF_000273215.1_Bact_ovat_CL03T12C18_V1_genomic.gff.gz
+ GCF_000699665.1_ASM69966v1_genomic.fna.gz
+ GCF_000699665.1_ASM69966v1_genomic.gff.gz
+ GCF_000699725.1_ASM69972v1_genomic.fna.gz
+ GCF_000699725.1_ASM69972v1_genomic.gff.gz
+
+
+
+# uncompress .gz files
+gzip -d *.gz
+
+
+
+# rename fna files: keep only GCF-number (remove all behind first dot)
+for FILE in *.fna; do 
+ mv ${FILE} ${FILE%%.*}.fna
+done;
+
+
+
+ls 
+GCF_000178275.fna
+GCF_000218325.fna
+°°°
+ 
+
+
+How to get the .ffn gene sequence files?
+
+Update (September 2017)
+
+PanPhlAn accepts .gff files as input (.ffn gene sequences are extracted by PanPhlAn)
+
+
+panphlan_pangenome_generation.py -c speciesname --i_fna ncbi_download_fna/ --i_gff ncbi_download_gff/ -o database/
+
+
+
+Prokka (recommended)
+ You can run Prokka on the genome files (.fna) to re-annotate all genomes by using the same approach. The Prokka .gff files can be used as input for PanPhlAn
+http://www.metagenomics.wiki/tools/annotation/prokka
+
+
+
+
+
+panphlan_pangenome_generation.py -c speciesname --i_gff prokka_gff/ -o database/
+
+
+```
+
+
 
 ##mOTU taxonomic annotation
 In order to test the Metaphlan output we use a second well known taxonomic profiler for metagenomic datasets.
@@ -554,8 +670,12 @@ for name in cottens lapraz
       $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_PBAlign/raw_${name}_PBAaligned_Scaffolds_woConsensu.bam 
   
 
+     
+
       ##lapraz
       RawBamSubreadscottens=/home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/1_8_La_praz_3_D02.tar.gz/m54073_171026_034928.subreads.bam 
+      
+      
    done
 
 ```
@@ -576,7 +696,10 @@ source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run2017110
 for name in cottens lapraz
    do 
     mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/assembly/
-    $pacbio_root/variantCaller --algorithm arrow --minConfidence 40 --minCoverage 5 \
+    
+     samtools faidx $DATA_ROOT/15_flye/assembly_${name}_raw/fasta/scaffolds.fasta
+    
+    $pacbio_root/variantCaller --algorithm arrow --minConfidence 40 --minCoverage 5 --numWorkers 5 \
       -o $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
       -o $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fastq.gz \
       -o $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/assembly/reference_${name}_variants.vcf \
@@ -592,7 +715,10 @@ for name in cottens lapraz
 for name in cottens lapraz
    do 
     mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/
-    $pacbio_root/variantCaller --algorithm arrow --minConfidence 40 --minCoverage 5 \
+    
+    samtools faidx $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta 
+    
+    $pacbio_root/variantCaller --algorithm arrow --minConfidence 40 --minCoverage 5 --numWorkers 5 \
       -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
       -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fastq.gz \
       -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}_variants.vcf \
@@ -628,7 +754,7 @@ for name in cottens lapraz
 for name in cottens lapraz
    do
      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/{blast,rawReads2assembly_minimap2,rawReads2assembly_ngml}
-     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
+     blastn -num_threads 15 -max_hsps 10 -max_target_seqs 10 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
    done
 ```
 
@@ -859,6 +985,8 @@ for name in cottens lapraz
 ##plasmid assembly read mapping
 
 ```{bash minimapr_plasmidAssemblym, eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
 ##-------   
 ##rawRead mappingminimap2 to rawRead Scaffolds assembly
 ##-------   
@@ -879,6 +1007,160 @@ for name in cottens lapraz
    samtools -flagstat $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.bam >> $DATA_ROOT/15_flye/assembly_${name}_min5000/plasmidAssembly_flye/RawReads2plasmidassembly_minimap2/unmapped_${name}_minimap2Mapped_plasmid_Scaffolds_sorted.log
    done 
 ```
+
+##Mauve alignment of complete Genomes
+In order to see the colinearity of the sofar Sequenced RefSeq genomes and the one sequenced here we implement a Mauve alignement.
+For the comparison I downloaded all the completely sequenced reference genomes on RefSeq for Lactobacillus helveticus (n=13), Lactobacillus delbrueckii (n=17) and Streptococcus thermophilus (n=22) on the 29.01.2018. 
+For the mauve alignment I split the assembled contigs and aligned them with Mauve according to the best Blast hit. The alignment in Mauve was implemented from the GUI. 
+
+```{bash splitMultiFastA , eval=F}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##--
+##raw reads
+##--
+
+for name in cottens lapraz
+   do
+    location=$(pwd)
+    cd $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/assembly/
+    awk '/^>/{s=++d".fasta"} {print > s}' reference_${name}.fasta
+    cd $location
+  done
+
+##--
+##min5000 reads
+##--
+
+for name in cottens lapraz
+   do
+    location=$(pwd)
+    cd $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/
+    awk '/^>/{s=++d".fasta"} {print > s}' reference_${name}.fasta
+    cd $location
+  done
+
+```
+
+```{bash progressive_Mauve , eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+###---------------------
+##Cottens assemblies mauve
+###---------------------
+
+##--------------------------Streptococcus mauve-----------------------------
+
+${mauve_root}/progressiveMauve --output=$DATA_ROOT/19_mauve/cottens_min5000/Ster/all.image.out  \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_900094135.1_ASM90009413v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_002846155.1_ASM284615v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_002846075.1_ASM284607v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_002443035.1_ASM244303v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_002286255.1_ASM228625v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_002012365.1_ASM201236v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_001855705.1_ASM185570v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_001705585.1_ASM170558v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_001685375.1_ASM168537v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_001663795.1_ASM166379v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_001514435.1_ASM151443v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_001280285.1_ASM128028v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_001008015.1_ASM100801v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_000971665.1_ASM97166v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_000698885.1_ASM69888v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_000262675.1_ASM26267v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_000253395.1_ASM25339v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_000182875.1_ASM18287v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_000014485.1_ASM1448v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_000011845.1_ASM1184v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Sthe/fasta/ncbi-genomes-2018-01-29/GCF_000011825.1_ASM1182v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/15_flye/assembly_cottens_min5000/SmrtLink_polished_reference_arrow/assembly/Ster.fasta
+
+##--------------------------Lactobacillus delbrueckii mauve-----------------------------
+
+${mauve_root}/progressiveMauve --output=$DATA_ROOT/19_mauve/cottens_min5000/Ldel/all.image.out  \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_900196735.1_Lactobacillus_bulgaricus_ACA-DC_87_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_002285775.1_ASM228577v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_002278095.1_ASM227809v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_002142575.1_ASM214257v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_002000885.1_ASM200088v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_001953135.1_ASM195313v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_001908415.1_ASM190841v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_001888985.1_ASM188898v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_001888965.1_ASM188896v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_001888945.1_ASM188894v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_001888925.1_ASM188892v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_001888905.1_ASM188890v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_001469775.1_ASM146977v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_000191165.1_ASM19116v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_000182835.1_ASM18283v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_000056065.1_ASM5606v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/18_NCBIGenomes/Ldel/fasta/ncbi-genomes-2018-01-29/GCF_000014405.1_ASM1440v1_genomic.fna \
+    /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/15_flye/assembly_cottens_min5000/SmrtLink_polished_reference_arrow/assembly/Ldel.fasta
+
+###---------------------
+##lapraz assemblies mauve
+###---------------------
+
+
+
+```
+
+
+#Figtree based on the mauve alignment
+Apart from the colinearity plot, mauve additionally outputs a newick file with a prelimary tree. This prelimary tree is visualized in figtree. However before doing that the sequences names have to be match to the orignal file names again. 
+
+```{bash name_matchin , eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##---
+##Ster change name in mauve
+##---
+sudo rm $DATA_ROOT/19_mauve/cottens_min5000/Ster/all.image.out.guide_tree.renamed
+cp $DATA_ROOT/19_mauve/cottens_min5000/Ster/all.image.out.guide_tree $DATA_ROOT/19_mauve/cottens_min5000/Ster/all.image.out.guide_tree.renamed
+
+#for name in cottens lapraz
+#   do
+    grep -E "Sequence[0-9]+File" $DATA_ROOT/19_mauve/cottens_min5000/Ster/all.image.out |sed 's/#Sequence/seq/g'|sed 's/File//g'|awk -F '[\t/]' '{print $1 , $14}'| sed 's/ /\t/g' |sed 's/.f/_f/g'|sort -r -V > $DATA_ROOT/tmp.txt
+
+    IFS=$'\n'
+    while IFS= read -r line; 
+      do
+        tmp1=$(echo $line | cut -f1)
+        tmp2=$(echo $line | cut -f2)
+        sed -i "s/${tmp1}/${tmp2}/g" $DATA_ROOT/19_mauve/cottens_min5000/Ster/all.image.out.guide_tree.renamed
+      done < "$DATA_ROOT/tmp.txt"
+ #     rm $DATA_ROOT/tmp.txt
+#   done
+
+
+##---
+##Ldel change name in mauve
+##---
+sudo rm $DATA_ROOT/19_mauve/cottens_min5000/Ldel/all.img.old.guide_tree.renamed
+cp $DATA_ROOT/19_mauve/cottens_min5000/Ldel/all.img.old.guide_tree $DATA_ROOT/19_mauve/cottens_min5000/Ldel/all.img.old.guide_tree.renamed
+
+#for name in cottens lapraz
+#   do
+    grep -E "Sequence[0-9]+File" $DATA_ROOT/19_mauve/cottens_min5000/Ldel/all.img.old |sed 's/#Sequence/seq/g'|sed 's/File//g'|awk -F '[\t/]' '{print $1 , $14}'| sed 's/ /\t/g' |sed 's/.f/_f/g'|sort -r -V > $DATA_ROOT/tmp.txt
+
+    IFS=$'\n'
+    while IFS= read -r line; 
+      do
+        tmp1=$(echo $line | cut -f1)
+        tmp2=$(echo $line | cut -f2)
+        sed -i "s/${tmp1}/${tmp2}/g" $DATA_ROOT/19_mauve/cottens_min5000/Ldel/all.img.old.guide_tree.renamed
+      done < "$DATA_ROOT/tmp.txt"
+ #     rm $DATA_ROOT/tmp.txt
+#   done
+
+```
+##Figtree
+With Figtree I visualized the preliminary tree outputed from Mauve.
+The Cottens trees look as following:
+![Lactobacillus delbrueckii tree containing the here assembled (Ldel_fasta) and all complete RefSeqs of Ldel](/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/19_mauve/cottens_min5000/Ldel/all.img.old.guide_tree.renamed_tree.png)
+
+![Lactobacillus delbrueckii tree containing the here assembled (Ldel_fasta) and all complete RefSeqs of Ldel](/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/19_mauve/cottens_min5000/Ster/all.image.out.guide_tree.copy_tree.png)
+
 
 
 ##Abruijn
@@ -1055,7 +1337,7 @@ Additionally spray can check for circularity of an assembly.
 However this code chunk was removed on the 24.1.2018.
 
 #Binning reads/preassembled reads 
-Different binning approachs have been applied. Amongst the most common ones are: the Tetranucleotide binning [@Iverson2012] and the coverage based binning [@Albersen2013]. However it has been noticed that both entities applie only to entities with a extreme skew. Further it is unlikely that both the coverage aswell as the tetranucleotide distribution is consisten over the entire genome. Therefore these methods might additionally bias the assembly. 
+Different binning approachs have been applied. Amongst the most common ones are: the Tetranucleotide binning [@Iverson2012] and the coverage based binning [@Albertsen2013]. However it has been noticed that both entities applie only to entities with a extreme skew. Further it is unlikely that both the coverage aswell as the tetranucleotide distribution is consisten over the entire genome. Therefore these methods might additionally bias the assembly. 
 
 ##Own Blobology on preassemblies
 The blobolgoy is based on te preassembled reads.
