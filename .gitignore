@@ -19,3 +19,4 @@ reads_fastqc/
 17_PanPhlAn/
 18_NCBIGenomes/
 19_mauve/
+20_genbankDB/

@@ -13,21 +13,50 @@ However there are well known limitations including biases introduced by copy-num
 
 Therefor to truely understand the specific species and intra-species diversity shotgun whole genome sequencing of the metagenome should be considered. The most recent improvments in third generation sequencing enable sofar unprecedented oppurtunities to sequence entire metagenomes of low complexity communities. 
 
-Additonally to the taxonomic profiling whole metagenome sequencing has further advantages in the gene functional analysis [@Qin2012,@Forslund2013] aswell as the genomic variation analysis [@Sunagawa2013]
+Additonally to the taxonomic profiling whole metagenome sequencing has further advantages in the gene functional analysis [@Qin2012,@Forslund2013] aswell as the genomic variation analysis [@Sunagawa2013].
+
+##cheese community literature
+Cheese acounts for a low complexity microbial community consisting mainly of a few lactic acid bacteria. Sofar cheese community have been assesed mainly based on targeted amplicon sequencing [@Ercolini2013] which provides information restricted to the phylogenetic composition of the samples. Many milk fermenation products such as mozzarella cheese [@Ercolini2012], Kazakhstan Cheese [@Li2017], and Mexican Poro cheese [@Aldrete-Tapia2014] but also very traditional indian fermented milk products[@Nakibapher2018]. However, studies based on targetd amplicon sequencing are limited to the identification of the microbial community to the genus and with longer SMRT seq to the species level. However, there is much more to learn from microbial community of fermented food products than just the mere species diversity and abundance. Intraspecific variation independent of the strain definition has been accounted for palette of different phenotypic effects. Most famous are pathogenecity [@Karch2012], antibiotic resistance (ref),...
+In order to comprehend the full potential of the whee starter culture, the genomes have to be completely sequenced and assembled de novo for all microbial organism.
+
+####shotgun metagenomics of fermented foods
+Sofar only few studies have done a shotgun metagenomic approach of food related microbial communities. 
+- A 454 based study of Kimchi [@Jung2011]
+- unmarinated and marinated broiler meat [@Nieminen2012]
+- All-Food-Seq (AFS): A quantifiable screen for species in biological samples by deep DNA sequencing [@Ripp2014]
+- dairy microbial genome catalog [@Almeida2014]: In order to overcome the shortcomings of short read sequencing for food metagenomics an extenisve dairy microbial genome catalog consisting of 142 bacterial draft genomes. A reference genome guided assembly potentially gives additional taxonomic resolution it will however not be able to identify function units or novel pathways within intraspecific diversity.  
+
 
 ##advantages and difficulties of long read sequencing on solving metagenomes
 
-Ongoing improvements of both Pacbio (RSII and Sequel) as well as Nanopore (Miniion and Promethion) for increased read length, higher throughput and read quality have changed the field of whole genome sequencing. Assembling complete circularized genomes is becoming a standard. It is well known that for completely assembling a genome the sequencing reads need to span the longest intragenomic repeat region [@Olson2017]. For metagenomic assemblies the reads however not only have to span intragenomic repeats but also intergenomic repeats. An intergenomic repeat is a homological sequence between two or more co-occurring organism. These repeats are not generally of low complexity but can also be of low divergence and therefore are intrinsically indistinguishable. These repeats can be resolved by either spanning the repeat with long sequences to anchor within unique flanking regions or by increased sequencing quality whereby genomes can be discriminated solely based on subtle differences.
+Ongoing improvements of both Pacbio (RSII and Sequel) as well as Nanopore (Minion and Promethion) for increased read length, higher throughput and read quality have changed the field of whole genome sequencing. Assembling complete circularized genomes is becoming a standard. It is well known that for completely assembling a genome the sequencing reads need to span the longest intragenomic repeat region [@Olson2017]. For metagenomic assemblies the reads however not only have to span intragenomic repeats but also intergenomic repeats. An intergenomic repeat is a homological sequence between two or more co-occurring organism. These repeats are not generally of low complexity but can also be of low divergence and therefore are intrinsically indistinguishable. These repeats can be resolved by either spanning the repeat with long sequences to anchor within unique flanking regions or by increased sequencing quality whereby genomes can be discriminated solely based on subtle differences.
 
 ##Advantages of whole genome metagenomics in comparison to targeted amplicon sequencing of communities.
 Sequencing the entire DNA potential within the environment of interest has multiple advantages.
 1. No PCR biases due to different binding abilities of the primers to different sequences.
-2. Better resolution to identifing higher order taxonomical differences. For exmaple in pinpointing strain levela or resistence. Like antibiotic restistance. 
+2. Better resolution to identifing higher order taxonomical differences. For exmaple in pinpointing strain level or resistence. Like antibiotic restistance. 
 3. ability to indentify core metagenomes if multiple treatments and multiple replicates. 
 4. possibility to identifiy treatment specific metagenomes
 5. functional annotation of sequencing data and implications of genotype/genes on phenotype
 6.Fundamental basis for all further 'omic analysis and functional analysis of specific environment. 
 7. Without complete genomes of the specific strains, studies are limited to the study of targeted genes or SNPs. Final ability to study large structural variation (relocations and horizontal gene transfer), which potentially have sofar unprecedented effects on the phenotype. 
+
+##Importance of exact species/strain assembly
+The genetic differences within E.coli that cause a severe food poisening are very subtle and consist only of a handful of virulence factors such as Shiga toxin 2-encoding prophage [@Karch2012]. Therefore it is clinically of utter importance to identify the preciese genetic background.
+
+##Discussion
+Maybe the two Fettsirte match functionally (KEGG,GO) but not taxonomically. 
+
+####Lactobacillus helveticus
+Lactobacillus helveticus is well-known for its proteolytic activity, which is of importance in reducing the cheese bitterness [@Griffiths2013]. 
+
+#### thermophilus and Lactobacillus delbrueckii
+Streptococcus thermophilus and Lactobacillus delbrueckii are known to be in tight association [@Yang2008]. S. thermophilus actively supports L. delbrueckii growth by producing acing and dissolving oxygen to CO2 thereby creating the optimal anearobic conditions necessary for L. delrueckii. On the other hand. On the contrary L. delbrueckii stimulates S. thermophilus growth by the release of amino acids through proteolytic enzymatic activity [@Aghababaie2015].
+
+
+
+####Conclusions
+The relationship of the specific genotyp and the phenotype are in tight association. The study of the specific genotypes will be vital for future understanding and potential engineering of microbial communities. It will be critical to determine and record pivotal metainfomration of the specific community. Such metainformation should consist of quantitaive information such as sample origin, sampling time, pH, salinity, ripening degree, cheese type but also qualitative information such as taste or smell. These standards have to become common practice in every community based study.  
 
 
 ##Our study setup
@@ -75,6 +104,13 @@ echo 'sniffles_root=/home/bioinf/extradrv/Sniffles-master/bin/sniffles-core-1.0.
 echo 'flye_root=/home/bioinf/extradrv/Flye/bin/flye' >> $file
 echo 'pacbio_root=/home/bioinf/extradrv/opt/pacbio/smrtlink/smrtcmds/bin' >> $file
 echo 'mauve_root=/home/bioinf/extradrv/mauve_snapshot_2015-02-13/linux-x64/' >> $file
+echo 'prokka_root=/home/bioinf/extradrv/prokka/bin/' >> $file
+echo 'Illumina_raw=/home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input' >> $file
+
+
+
+
+
 
 
 
@@ -204,15 +240,12 @@ for name in cottens lapraz
     sed -n '1~4s/^@/>/p;2~4p' $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fastq > $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fasta
     seq_length.py $DATA_ROOT/01_SMRTlink_data/${name}_ccs/ccs_${name}.fasta > $DATA_ROOT/01_SMRTlink_data/${name}_ccs/seq_length.ttxt
    done    
- 
+   
  
  print(c("contig_1 :",        2251206-2251141))
  print(c("contig_7 :",       39877-39878))
 print(c("scaffold_3 :",      1903347-1903107))
 
-contig_1|arrow  2251141                                                                                                                                                                                                                                                    
-contig_7|arrow  39878                                                                                                                                                                                                                                                          
-scaffold_3|arrow        1903107   
    
 ```
 
@@ -337,6 +370,39 @@ for name in cottens lapraz
     $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon_${name}.fasta --bowtie2out $DATA_ROOT/06_metaphlan/${name}_preassembled/bowtie2ouput/metagenome_${name}_preassembled.bowtie2.bz2 --nproc 12 --input_type fasta > $DATA_ROOT/06_metaphlan/${name}_preassembled/metaphlan_profile/profiled_metagenome_${name}_preassembled.txt
    done
    
+##----------------
+##metaphlan Usage Illumina cottens
+##----------------
+
+mkdir -p $DATA_ROOT/01_SMRTlink_data/cottensIllumina
+zcat /home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input/P1761-3752-2-2_S6_L001_R1_001.fastq.gz /home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input/P1761-3752-2_S3_L001_R1_001.fastq.gz /home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input/P1761-3752-2-2_S6_L001_R2_001.fastq.gz /home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input/P1761-3752-2_S3_L001_R2_001.fastq.gz > $DATA_ROOT/01_SMRTlink_data/cottensIllumina/all_Illumina_RawReads_cottens_cat.fastq 
+
+
+name=cottens
+mkdir -p $DATA_ROOT/06_metaphlan/${name}_Illumina/{bowtie2ouput,metaphlan_profile}/
+    rm $DATA_ROOT/06_metaphlan/${name}_Illumina/bowtie2ouput/metagenome_${name}_rawIllumina.bowtie2.bz2
+
+    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/cottensIllumina/all_Illumina_RawReads_cottens_cat.fastq --input_type fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_Illumina/bowtie2ouput/metagenome_${name}_rawIllumina.bowtie2.bz2 --nproc 12 > $DATA_ROOT/06_metaphlan/${name}_Illumina/metaphlan_profile/profiled_metagenome_${name}_rawIllumina.txt
+
+
+
+###--------------
+##Lapraz
+###--------------
+mkdir -p $DATA_ROOT/01_SMRTlink_data/laprazIllumina
+zcat /home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input/P1761-3752-1-2_S12_L001_R1_001.fastq.gz /home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input/P1761-3752-1_S9_L001_R1_001.fastq.gz /home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input/P1761-3752-1-2_S12_L001_R2_001.fastq.gz /home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input/P1761-3752-1_S9_L001_R2_001.fastq.gz > $DATA_ROOT/01_SMRTlink_data/laprazIllumina/all_Illumina_RawReads_lapraz_cat.fastq 
+
+
+name=lapraz
+mkdir -p $DATA_ROOT/06_metaphlan/${name}_Illumina/{bowtie2ouput,metaphlan_profile}/
+    rm $DATA_ROOT/06_metaphlan/${name}_Illumina/bowtie2ouput/metagenome_${name}_rawIllumina.bowtie2.bz2
+
+    $mpa_dir/metaphlan2.py $DATA_ROOT/01_SMRTlink_data/laprazIllumina/all_Illumina_RawReads_lapraz_cat.fastq --input_type fastq --bowtie2out $DATA_ROOT/06_metaphlan/${name}_Illumina/bowtie2ouput/metagenome_${name}_rawIllumina.bowtie2.bz2 --nproc 12 > $DATA_ROOT/06_metaphlan/${name}_Illumina/metaphlan_profile/profiled_metagenome_${name}_rawIllumina.txt
+
+
+
+
+
 ```
 From the Metaphlan2 output it seems as if only the three most common cheese species are present in the lapraz metagenome.
 
@@ -461,8 +527,6 @@ panphlan_pangenome_generation.py -c speciesname --i_gff prokka_gff/ -o database/
 
 ```
 
-
-
 ##mOTU taxonomic annotation
 In order to test the Metaphlan output we use a second well known taxonomic profiler for metagenomic datasets.
 However mOTU does not work with Pacbio data. mOTU was made only for short next generation sequencing technologies, specifically for Illumina, Ion Torrent or 454. 
@@ -537,7 +601,7 @@ name=cottens
     #LineTrue=$(grep "$LastLine" -n $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta|awk -F":" '{print 758929-$1}')
     #tail -$LineTrue $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta
     
-    $blast_root_michi/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_${date}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_reverse_subset_${date}.txt -evalue 0.01 -word_size 12
+    <!-- $blast_root_michi/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_${date}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_reverse_subset_${date}.txt -evalue 0.01 -word_size 12 -->
     #echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
     #echo END $name = `date +"%Y-%m-%d %H:%M:%S"`
   
@@ -830,6 +894,40 @@ for name in cottens lapraz
       samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
   done   
 ```
+
+####Mapp Illumina Miseq reads to Pacbio assembly
+We have ran a MiSeq run for the two whee cultures (cottens and Lapraz). The reads are 300bp PE. In the following we map the raw reads to the pacbio sequence and flye assembled genomes. 
+
+```{bash IlluminaMapping, eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+###--------------
+##Cottens
+###--------------
+name=cottens
+mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/bamqc
+#bwa index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta
+bwa mem $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta '<zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2_S3_L001_R1_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2-2_S6_L001_R1_001.fastq.gz' '<zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2_S3_L001_R2_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2-2_S6_L001_R2_001.fastq.gz' -t 14 |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam - | tee $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.log
+     
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/bamqc --java-mem-size=2G
+    
+samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam
+
+###--------------
+##Lapraz
+###--------------
+name=lapraz
+mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/bamqc
+bwa index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta
+bwa mem $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta '<zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1_S9_L001_R1_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1-2_S12_L001_R1_001.fastq.gz' '<zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1_S9_L001_R2_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1-2_S12_L001_R2_001.fastq.gz' -t 14 |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam - | tee $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.log
+     
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/bamqc --java-mem-size=2G
+     
+samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam
+
+```
+
+
 ####ngmlr/sniffles
 Ngmlr and sniffles are mappers which are well known to identify structural variation
 ```{bash ngmlrSniffles, eval=FALSE}
@@ -886,10 +984,44 @@ for name in cottens lapraz
 
 ```
 
+###Structural variation caller Pacbio
+Pacbio offers an inhouse structural variation caller. This processes includes the steps illustrated in the following graphic:
+
+ ![Structrual Variation calling steps implemented by Pacbio](/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/99_Extras/SV_caller.png)
+
+```{bashstructuralVariationPacBio, eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##--------------align with structural variant aware aligner------------------
+
+##cottens
+RawBamSubreadscottens=/home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/2_7_Cottens_4_E02.tar.gz/m54073_171026_135911.subreads.bam
+for name in cottens lapraz
+   do 
+       mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/pacbio_VariantCaller/
+          samtools faidx $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta
+      $pacbio_root/pbsv align $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta ${RawBamSubreadscottens} $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/pacbio_VariantCaller/pacbio_ref_align_${name}.bam
+        ##lapraz
+        RawBamSubreadscottens=/home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/1_8_La_praz_3_D02.tar.gz/m54073_171026_034928.subreads.bam 
+    done
+
+##--------------call structural variants from aligned reads------------------
+for name in cottens lapraz
+   do 
+    $pacbio_root/pbsv call \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/pacbio_VariantCaller/pacbio_variantCall_${name}.vcf 
+   done
+
+
+```
+
+
 ####Nucmer
 In order to identify possible repeating regions between and within the genomes
 
-```{bash nucmer_flye ,eval=FALSE}
+```{bash nucmer_flye ,eval=FALSE, echo=FALSE}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 ###==========================
 ##nucmer rawreads
@@ -926,6 +1058,14 @@ for name in cottens lapraz
   
   
 ```
+
+##repeat analysis geneious
+
+In order to better comprehend the structural variation predicition from both pacbio (pbsv) amd sniffles we further extract all repeats from the assembled contigs/genomes. For the repeat analysis we define the following thresholds:
+- min 500bp long
+- min identity of 5%
+
+These repeats are used in order to clarify structural variation or spurious regions in the genome. If these regions can be explained by a repeat than we do not consider it as a problem. 
 
 ####assembling non mapping reads (plasmid assembly)
 The reads which did not map with minimap2 to the flye assembled de novo reference genome are now taken and reassembled in a second stage. 
@@ -1010,7 +1150,7 @@ for name in cottens lapraz
 
 ##Mauve alignment of complete Genomes
 In order to see the colinearity of the sofar Sequenced RefSeq genomes and the one sequenced here we implement a Mauve alignement.
-For the comparison I downloaded all the completely sequenced reference genomes on RefSeq for Lactobacillus helveticus (n=13), Lactobacillus delbrueckii (n=17) and Streptococcus thermophilus (n=22) on the 29.01.2018. 
+For the comparison I downloaded all the completely sequenced reference genomes on RefSeq for [Lactobacillus helveticus](https://www.ncbi.nlm.nih.gov/assembly/?term=Lactobacillus+helveticus) (n=13), [Lactobacillus delbrueckii](https://www.ncbi.nlm.nih.gov/assembly/?term=Lactobacillus+delbrueckii) (n=17) and [Streptococcus thermophilus](https://www.ncbi.nlm.nih.gov/assembly/?term=Streptococcus+thermophilus) (n=22) on the 29.01.2018. 
 For the mauve alignment I split the assembled contigs and aligned them with Mauve according to the best Blast hit. The alignment in Mauve was implemented from the GUI. 
 
 ```{bash splitMultiFastA , eval=F}
@@ -1159,7 +1299,65 @@ With Figtree I visualized the preliminary tree outputed from Mauve.
 The Cottens trees look as following:
 ![Lactobacillus delbrueckii tree containing the here assembled (Ldel_fasta) and all complete RefSeqs of Ldel](/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/19_mauve/cottens_min5000/Ldel/all.img.old.guide_tree.renamed_tree.png)
 
+The closest genomes is [ASM227809v1](https://www.ncbi.nlm.nih.gov/assembly/GCF_002278095.1/), which is isolate from ementaler cheese. 
+
+
 ![Lactobacillus delbrueckii tree containing the here assembled (Ldel_fasta) and all complete RefSeqs of Ldel](/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/19_mauve/cottens_min5000/Ster/all.image.out.guide_tree.copy_tree.png)
+
+
+##Prokka
+
+```{bash prokka ,eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------Create Prokka database annotation Lactobacillus-----
+
+
+mkdir -p $DATA_ROOT/20_genbankDB/{Lactobacillus,Streptococcus}
+ $prokka_root/prokka-genbank_to_fasta_db $(find /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/20_genbankDB/Lactobacillus/ncbi-genomes-2018-02-02/|grep "gbff$") > $DATA_ROOT/20_genbankDB/Lactobacillus/ncbi-genomes-2018-02-02/all_Lactobacillus.faa
+ 
+ cd-hit -i $DATA_ROOT/20_genbankDB/Lactobacillus/ncbi-genomes-2018-02-02/all_Lactobacillus.faa -o $DATA_ROOT/20_genbankDB/Lactobacillus/ncbi-genomes-2018-02-02/Lactobacillus -T 0 -M 0 -g 1 -s 0.8 -c 0.9
+ rm -fv $DATA_ROOT/20_genbankDB/Lactobacillus/ncbi-genomes-2018-02-02/all_Lactobacillus.faa $DATA_ROOT/20_genbankDB/Lactobacillus/ncbi-genomes-2018-02-02/Lactobacillus.bak.clstr $DATA_ROOT/20_genbankDB/Lactobacillus/ncbi-genomes-2018-02-02/Lactobacillus.clstr
+ makeblastdb -dbtype prot -in $DATA_ROOT/20_genbankDB/Lactobacillus/ncbi-genomes-2018-02-02/Lactobacillus
+ mv $DATA_ROOT/20_genbankDB/Lactobacillus/ncbi-genomes-2018-02-02/Lactobacillus.p* /home/bioinf/extradrv/prokka/bin/../db/genus/  
+
+##-------Create Prokka database annotation Lactobacillus-----
+
+
+mkdir -p $DATA_ROOT/20_genbankDB/{Lactobacillus,Streptococcus}
+ $prokka_root/prokka-genbank_to_fasta_db $(find /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/20_genbankDB/Streptococcus/ncbi-genomes-2018-02-02/|grep "gbff$") > $DATA_ROOT/20_genbankDB/Streptococcus/ncbi-genomes-2018-02-02/Streptococcus.faa
+ 
+ cd-hit -i $DATA_ROOT/20_genbankDB/Streptococcus/ncbi-genomes-2018-02-02/Streptococcus.faa -o $DATA_ROOT/20_genbankDB/Streptococcus/ncbi-genomes-2018-02-02/Streptococcus -T 0 -M 0 -g 1 -s 0.8 -c 0.9
+ rm -fv $DATA_ROOT/20_genbankDB/Streptococcus/ncbi-genomes-2018-02-02/Streptococcus.faa $DATA_ROOT/20_genbankDB/Streptococcus/ncbi-genomes-2018-02-02/Streptococcus.bak.clstr $DATA_ROOT/20_genbankDB/Streptococcus/ncbi-genomes-2018-02-02/Streptococcus.clstr
+ makeblastdb -dbtype prot -in $DATA_ROOT/20_genbankDB/Streptococcus/ncbi-genomes-2018-02-02/Streptococcus
+ mv $DATA_ROOT/20_genbankDB/Streptococcus/ncbi-genomes-2018-02-02/Streptococcus.p* /home/bioinf/extradrv/prokka/bin/../db/genus/  
+  
+    
+##-------Ldel annotation-----
+for name in cottens 
+   do
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/prokka_genusSpe/Ldel
+    $prokka_root/prokka --outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/prokka_genusSpe/Ldel --force --usegenus --genus Lactobacillus --locustag LDCO --proteins proteins.faa --evalue 0.001 --addgenes $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/Ldel.fasta
+    
+    ##Prokka cannot cope with the pike in the chr name
+    sed -i 's/contig_1_arrow/contig_1|arrow/g' $DATA_ROOT/15_flye/assembly_cottens_min5000/SmrtLink_polished_reference_arrow/prokka_genusSpe/Ldel/PROKKA_02022018.gff
+   done
+
+
+##-------Ster annotation-----
+for name in cottens 
+   do
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/prokka_genusSpe/Ster
+    $prokka_root/prokka --outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/prokka_genusSpe/Ster --force --usegenus --genus Streptococcus --locustag STCO --proteins proteins.faa --evalue 0.001 --addgenes $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/Ster.fasta
+    
+     sed -i 's/scaffold_3_arrow/scaffold_3|arrow/g' $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/prokka_genusSpe/Ster/PROKKA_02022018.gff
+
+   done
+
+
+
+
+```
 
 
 
@@ -1337,7 +1535,8 @@ Additionally spray can check for circularity of an assembly.
 However this code chunk was removed on the 24.1.2018.
 
 #Binning reads/preassembled reads 
-Different binning approachs have been applied. Amongst the most common ones are: the Tetranucleotide binning [@Iverson2012] and the coverage based binning [@Albertsen2013]. However it has been noticed that both entities applie only to entities with a extreme skew. Further it is unlikely that both the coverage aswell as the tetranucleotide distribution is consisten over the entire genome. Therefore these methods might additionally bias the assembly. 
+Different binning approachs have been applied. Amongst the most common ones are: the Tetranucleotide binning [@Iverson2012] and the coverage based binning [@Albertsen2013]. However it has been noticed that both entities apply only to entities with a extreme skew. Further it is unlikely that both the coverage aswell as the tetranucleotide distribution is consisten over the entire genome. Therefore these methods might additionally bias the assembly. 
+An additional binning method could be based pn the co-abundance of a species in mutliple many samples. This method relies on a large number of replicates in order to cluster and assemble co-abundant clusters [@Nielsen2014]
 
 ##Own Blobology on preassemblies
 The blobolgoy is based on te preassembled reads.
