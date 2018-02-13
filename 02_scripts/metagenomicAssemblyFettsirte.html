@@ -204,6 +204,12 @@ echo 'pacbio_root=/home/bioinf/extradrv/opt/pacbio/smrtlink/smrtcmds/bin' &gt;&g
 echo 'mauve_root=/home/bioinf/extradrv/mauve_snapshot_2015-02-13/linux-x64/' &gt;&gt; $file
 echo 'prokka_root=/home/bioinf/extradrv/prokka/bin/' &gt;&gt; $file
 echo 'Illumina_raw=/home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input' &gt;&gt; $file
+echo 'rRNAdb=/home/bioinf/Downloads/sortmerna-2.1b/rRNA_databases/rfam5s_silva16s_silva23s_bac.fasta' &gt;&gt; $file
+echo 'rRNAdbindex=/home/bioinf/bioinf_data/43_sovi/Projects/Metagenomics_pipeline/Model_data/e_coli/04_trial_04/SortmeRNAindex/rfam5s_silva16s_silva23s_bac.idx' &gt;&gt; $file
+echo 'freebayes_root=/home/bioinf/extradrv/freebayes/bin' &gt;&gt; $file
+echo 'bcftools_root=/home/bioinf/extradrv/bcftools' &gt;&gt; $file
+
+
 
 
 
@@ -427,6 +433,44 @@ metaphlan_lapraz &lt;- load_metaphlan_assignment(&quot;/home/bioinf/bioinf_archi
 <p>PanPhlAn is a very recent species/strain profiler for shotgun metagenomic data.</p>
 <p>In a first step, they have a good manual how to batch download a bunch of genomes from NCBI.</p>
 </div>
+<div id="sortmerna" class="section level2">
+<h2>sortmeRNA</h2>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##---------------- 
+##sortmeRNA of raw pacbio data
+##----------------
+for name in cottens lapraz
+   do
+    SECONDS=0
+    mkdir -p $DATA_ROOT/21_sortmeRNA/Pacbio_raw_${name}/
+    sortmerna --ref $rRNAdb,$rRNAdbindex \
+    --reads $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq --log -v \
+     --fastx --aligned $DATA_ROOT/21_sortmeRNA/Pacbio_raw_${name}/raw_pacbio_${name}_rRNA_aligned_rRNA_reads
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+   done
+ 
+##---------------- 
+##sortmeRNA of raw Illumina data
+##----------------
+
+##--------------first only for cottens----------------------------
+
+#for name in cottens lapraz
+#   do
+   name=cottens
+    SECONDS=0
+    mkdir -p $DATA_ROOT/21_sortmeRNA/Illumina_raw_${name}/
+    sortmerna --ref $rRNAdb,$rRNAdbindex \
+    --reads $DATA_ROOT/01_SMRTlink_data/cottensIllumina/all_Illumina_RawReads_cottens_cat.fastq --log -v \
+     --fastx --aligned $DATA_ROOT/21_sortmeRNA/Pacbio_raw_${name}/raw_illumina_${name}_rRNA_aligned_rRNA_reads
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+#   done
+   
+</code></pre>
+</div>
 <div id="motu-taxonomic-annotation" class="section level2">
 <h2>mOTU taxonomic annotation</h2>
 <p>In order to test the Metaphlan output we use a second well known taxonomic profiler for metagenomic datasets. However mOTU does not work with Pacbio data. mOTU was made only for short next generation sequencing technologies, specifically for Illumina, Ion Torrent or 454.</p>
@@ -468,10 +512,10 @@ name=cottens
     #mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/blast
     #SECONDS=0
     
-    LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads.txt|cut -f 1)
+    LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_subset_${date}.txt|cut -f 1)
     LineTrue=$(grep &quot;$LastLine&quot; -n $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta|awk -F&quot;:&quot; '{print 758929-$1}')
+    date=20170202
     tail -$LineTrue $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta &gt; $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta
-date=20170125
 
     $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_subset_${date}.txt -evalue 0.01 -word_size 12
     echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
@@ -485,21 +529,21 @@ date=20170125
 #tail -367062 $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta &gt; $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_${date}.fasta
 
 cp -r /home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db  /home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db_duplicate
-blast_root_michi=/home/bioinf/Software/blast_2_7_1/ncbi-blast-2.7.1+/bin/blast/blastn
+blast_root_michi=/home/bioinf/Software/blast_2_7_1/ncbi-blast-2.7.1+/bin
 DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db_dupliate
+aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db_duplicate/nt_db4
 
-
-date=20170125
+date_old=20170125
+date=20170202
 name=cottens
     #mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/blast
     #SECONDS=0
     
-    #LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads.txt|cut -f 1)
-    #LineTrue=$(grep &quot;$LastLine&quot; -n $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta|awk -F&quot;:&quot; '{print 758929-$1}')
-    #tail -$LineTrue $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta &gt; $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta
+    LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_reverse_subset_${date_old}.txt|cut -f 1)
+    LineTrue=$(grep &quot;$LastLine&quot; -n $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_20170125.fasta|awk -F&quot;:&quot; '{print 367062-$1}')
+    tail -$LineTrue $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_20170125.fasta &gt; $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_michi_${date}.fasta
     
-    &lt;!-- $blast_root_michi/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_${date}.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_reverse_subset_${date}.txt -evalue 0.01 -word_size 12 --&gt;
+     $blast_root_michi/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_michi_${date}.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_reverse_subset_${date}.txt -evalue 0.01 -word_size 12 
     #echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
     #echo END $name = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
   
@@ -677,102 +721,9 @@ for name in cottens lapraz
 
 
   </code></pre>
-<div id="blast-assemblies" class="section level4">
-<h4>Blast assemblies</h4>
-<p>In the following we blasted both the contigs.fasta aswell as the scaffolds.fasta file against the prokaryotic ncbi database</p>
-<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-###-----------------
-##blast rawread flye scaffold assembly (entire procaryotic ncbi database)
-###-----------------
-
-for name in cottens lapraz
-   do
-     mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/{blast,rawReads2assembly_minimap2,rawReads2assembly_ngml}
-     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
-   done
-
-###-----------------
-##blast min5000 flye assembly (entire procaryotic ncbi database)
-###-----------------
-
-for name in cottens lapraz
-   do
-     mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/{blast,rawReads2assembly_minimap2,rawReads2assembly_ngml}
-     blastn -num_threads 15 -max_hsps 10 -max_target_seqs 10 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
-   done</code></pre>
-</div>
-<div id="minimap2-mapping-of-raw-reads-to-the-assemblies-1" class="section level4">
-<h4>Minimap2 mapping of raw reads to the assemblies</h4>
-<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-   
-##-------   
-##rawRead mappingminimap2 to rawRead Scaffolds assembly
-##-------   
-for name in cottens lapraz
-   do
-     ${minimap2_root} -t 12 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam - 
-   
-   done 
-
-##-------   
-##rawRead mappingminimap2 to min5000 Scaffolds assembly
-##-------   
-for name in cottens lapraz
-   do
-     ${minimap2_root} -t 12 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam - 
-   
-   done   
-   </code></pre>
-</div>
-<div id="bamqc-of-flye-assembly" class="section level4">
-<h4>BamQC of flye assembly</h4>
-<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-##-------   
-##bamqc mappingminimap2 to rawRead assembly (scaffolds)
-##-------   
-for name in cottens lapraz
-   do
-      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds
-
-      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam &gt; $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam
-      
-     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
-      
-      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds --java-mem-size=2G
-      
-      grep &quot;Globals&quot; -A 12  $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' &gt; $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds/global_stats.txt
-      
-      grep &quot;Coverage per contig&quot; -A 1000  $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc/genome_results.txt &gt; $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc/contig_stats.txt
- 
-      samtools index $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
-  done  
-  
-##-------   
-##bamqc mappingminimap2 to rawRead assembly (scaffolds)
-##-------   
-for name in cottens lapraz
-   do
-      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds
-
-      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam &gt; $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam
-      
-     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
-      
-      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds --java-mem-size=2G
-      
-      grep &quot;Globals&quot; -A 12  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' &gt; $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds/global_stats.txt
-      
-      grep &quot;Coverage per contig&quot; -A 1000  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc/genome_results.txt &gt; $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc/contig_stats.txt
- 
-      samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
-  done   </code></pre>
-</div>
 <div id="mapp-illumina-miseq-reads-to-pacbio-assembly" class="section level4">
 <h4>Mapp Illumina Miseq reads to Pacbio assembly</h4>
-<p>We have ran a MiSeq run for the two whee cultures (cottens and Lapraz). The reads are 300bp PE. In the following we map the raw reads to the pacbio sequence and flye assembled genomes.</p>
+<p>We have ran a MiSeq run for the two whee cultures (cottens and Lapraz). The reads are 300bp PE. In the following we map the raw reads to the pacbio sequenced flye assembled genomes.</p>
 <pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ###--------------
@@ -800,6 +751,274 @@ bwa mem $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_
 samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam
 </code></pre>
 </div>
+<div id="freebayes-polishing" class="section level4">
+<h4>freebayes polishing</h4>
+<p>In the following we polish the pacbio assembled and arrow polished genome with the Illumina Miseq data. This workflow goes as following: 1. Variant calling based on pacbio genome and Illumina reads with freebayes. 2. Integrating the called variants with bcftools</p>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------   
+##freebayes variant calling with Illumina data onto Pacbio polished genome
+##-------  
+
+for name in cottens lapraz
+   do 
+    SECONDS=0
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly
+    
+    $freebayes_root/freebayes -F 0.5 --min-coverage 8 -p 1 -f \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam &gt; \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+  done
+
+
+##-------   
+##bcftools variant integration of Illumina data into Pacbio polished genome
+##-------
+
+for name in cottens lapraz
+   do 
+    SECONDS=0
+    bgzip -c $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf &gt; \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf.gz
+      
+    tabix -p vcf $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf.gz
+    
+    $bcftools_root/bcftools consensus -f $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
+      -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf.gz
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+   done
+</code></pre>
+</div>
+<div id="circlator" class="section level4">
+<h4>Circlator</h4>
+<p>Use Circlator to close the genomes and close the residual gap in the Streptococcus genome.</p>
+<pre class="bash"><code>
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+###-----------------
+##Circlator all in one file with scaffold
+###-----------------
+for name in cottens lapraz
+   do 
+    SECONDS=0
+    
+    rm -r $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorAll/
+
+    export CIRCLATOR_SPADES=/home/bioinf/extradrv/SPAdes-3.7.1-Linux/bin/spades.py
+    
+    circlator all --threads 10 \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+      $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorAll
+
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+   done
+   
+   
+###-----------------
+##Circlator on all genomes individually
+###-----------------
+
+###-----------check conttens genomes------------
+name=cottens
+seq_length.py $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa
+less $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/blast/blastAssemblyaginstScaffolds.txt
+
+##---------------split files--------------
+cd $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/
+awk '/^&gt;/{s=++d&quot;.fasta&quot;} {print &gt; s}' $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa
+cd $DATA_ROOT
+mv $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/1.fasta \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ldel.fasta
+mv $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/2.fasta \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Phage.fasta
+mv $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/3.fasta \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ster.fasta
+##---------------split scaffold--------------
+sed -E 's/([n])\1+/i/g' $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ster.fasta | sed 's/i$//g' |sed 's/i/&gt;scaffold_3|arrow_02\n/g' &gt; $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Sterm.fasta
+
+rm $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ster.fasta 
+
+##---------------Ldel circlator--------------
+
+    SECONDS=0
+    
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/
+
+    export CIRCLATOR_SPADES=/home/bioinf/extradrv/SPAdes-3.7.1-Linux/bin/spades.py
+    
+    circlator all --threads 5 \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ldel.fasta \
+      $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/Ldel
+
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+
+
+##---------------Phage circlator--------------
+
+    SECONDS=0
+    
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/
+
+    export CIRCLATOR_SPADES=/home/bioinf/extradrv/SPAdes-3.7.1-Linux/bin/spades.py
+    
+    circlator all --threads 5 \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Phage.fasta \
+      $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/Phage
+
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`
+
+##---------------Sterm circlator--------------
+
+    SECONDS=0
+    
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/
+
+    export CIRCLATOR_SPADES=/home/bioinf/extradrv/SPAdes-3.7.1-Linux/bin/spades.py
+    
+    circlator all --threads 5 \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Sterm.fasta \
+      $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/Sterm
+
+    echo &quot;RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))&quot;
+    echo END = `date +&quot;%Y-%m-%d %H:%M:%S&quot;`  
+</code></pre>
+</div>
+<div id="blast-assemblies" class="section level4">
+<h4>Blast assemblies</h4>
+<p>In the following we blasted both the contigs.fasta aswell as the scaffolds.fasta file against the prokaryotic ncbi database</p>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+###-----------------
+##blast min5000 flye assembly (entire procaryotic ncbi database)
+###-----------------
+
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/{blast,rawReads2assembly_minimap2,rawReads2assembly_ngmlr}
+     
+     blastn -num_threads 15 -max_hsps 10 -max_target_seqs 10 -task megablast -show_gis \
+     -query $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+     -outfmt &quot;6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen&quot; -db $aditiBlastDB/nt \
+     -out $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/blast/blastAssemblyaginstScaffolds.txt \
+     -evalue 0.01 -word_size 64
+   done</code></pre>
+</div>
+<div id="minimap2-mapping-of-raw-reads-to-the-assemblies-1" class="section level4">
+<h4>Minimap2 mapping of raw reads to the assemblies</h4>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+   
+
+##-------   
+##rawRead mappingminimap2 to min5000 Scaffolds assembly
+##-------   
+for name in cottens lapraz
+   do
+     ${minimap2_root} -t 12 -ax map-pb \
+     $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+     $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM \
+     -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam - 
+   
+   done   
+   </code></pre>
+</div>
+<div id="bamqc-of-flye-assembly" class="section level4">
+<h4>BamQC of flye assembly</h4>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------   
+##bamqc mappingminimap2 to rawRead assembly (scaffolds)
+##-------   
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc_scaffolds
+
+      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam &gt; $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam
+      
+     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
+      
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc_scaffolds --java-mem-size=2G
+      
+      grep &quot;Globals&quot; -A 12  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc_scaffolds/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' &gt; $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc_scaffolds/global_stats.txt
+      
+      grep &quot;Coverage per contig&quot; -A 1000  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc/genome_results.txt &gt; $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc/contig_stats.txt
+ 
+      samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
+  done   </code></pre>
+</div>
+<div id="illumina-reads-mapping-to-genome-assembly" class="section level4">
+<h4>Illumina reads mapping to genome assembly</h4>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+###--------------
+##Cottens
+###--------------
+name=cottens
+mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/bamqc
+bwa index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa 
+bwa mem $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+  '&lt;zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2_S3_L001_R1_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2-2_S6_L001_R1_001.fastq.gz' \
+  '&lt;zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2_S3_L001_R2_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2-2_S6_L001_R2_001.fastq.gz' \
+  -t 8 |samtools sort -@8 -O BAM \
+  -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam - | tee $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.log
+     
+$QUAL_ROOT/qualimap bamqc \
+   -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/bamqc --java-mem-size=2G
+    
+samtools index \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam
+
+###--------------
+##Lapraz
+###--------------
+name=lapraz
+mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/bamqc
+bwa index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa
+bwa mem $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+  '&lt;zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1_S9_L001_R1_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1-2_S12_L001_R1_001.fastq.gz' \
+  '&lt;zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1_S9_L001_R2_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1-2_S12_L001_R2_001.fastq.gz' \
+  -t 8 |samtools sort -@8 -O BAM \
+  -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam - | tee $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.log
+     
+$QUAL_ROOT/qualimap bamqc \
+  -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/bamqc --java-mem-size=2G
+     
+samtools index \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam
+</code></pre>
+</div>
+<div id="control-different-assemblies-with-quast" class="section level4">
+<h4>control different assemblies with quast</h4>
+<p>In the following we compare the genome assembly evolution. Here we compare the following assembly stages: 1. flye assembly with flye polishing (mapping of reads with minimap2 and correcting) 2. arrow polishing of assmebly with pacbio raw reads 3. Freebayes polishing of Pacbio assembly with Illumina reads (Gold standard and therefore taken as Reference)</p>
+<pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------   
+##quast of genome assemblies
+##------- 
+
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/22_QuastAssemblyComparison/flye_arrow_freebayes_${name}
+    quast.py \
+      -t 8 -l &quot;flyeAssembly,flyeAssembly_ArrowPolished&quot; \
+      -R $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
+      -o $DATA_ROOT/22_QuastAssemblyComparison/flye_arrow_freebayes_${name}/
+   done
+</code></pre>
+</div>
 <div id="ngmlrsniffles" class="section level4">
 <h4>ngmlr/sniffles</h4>
 <p>Ngmlr and sniffles are mappers which are well known to identify structural variation</p>
@@ -807,24 +1026,18 @@ samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_ref
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##-------   
-##NGMLR of rawreads
-##-------   
-for name in cottens lapraz
-   do
-#    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_ngmlr/
-    $ngmlr_root/ngmlr -t 12 -r $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -q $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam - 
-  done
-  
-##-------   
 ##NGMLR of min5000
 ##-------   
 for name in cottens lapraz
    do
-#    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_ngmlr/
-    $ngmlr_root/ngmlr -t 12 -r $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -q $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam - 
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/
+    $ngmlr_root/ngmlr -t 12 \
+      -r $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+      -q $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq \
+      |samtools sort -@8 -O BAM \
+      -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam - 
   done
-    
-</code></pre>
+    </code></pre>
 </div>
 </div>
 <div id="structural-variation" class="section level2">
@@ -833,22 +1046,14 @@ for name in cottens lapraz
 <pre class="bash"><code>source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##-------   
-##sniffles of rawreads
-##-------   
-for name in cottens lapraz
-   do
-    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/sniffles
-    $sniffles_root/sniffles -t 10 -m $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam -v $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw.vcf
-
-  done
-
-##-------   
 ##sniffles of min5000
 ##-------   
 for name in cottens lapraz
    do
-    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/sniffles
-    $sniffles_root/sniffles -t 10 -m $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam -v $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw_min5000.vcf
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/sniffles
+    $sniffles_root/sniffles -t 10 \
+      -m $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam \
+      -v $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw_min5000.vcf
 
   done
 </code></pre>
@@ -867,9 +1072,15 @@ for name in cottens lapraz
 RawBamSubreadscottens=/home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/2_7_Cottens_4_E02.tar.gz/m54073_171026_135911.subreads.bam
 for name in cottens lapraz
    do 
-       mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/pacbio_VariantCaller/
-          samtools faidx $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta
-      $pacbio_root/pbsv align $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta ${RawBamSubreadscottens} $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/pacbio_VariantCaller/pacbio_ref_align_${name}.bam
+       mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/pacbio_VariantCaller/
+       
+       #samtools faidx $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa
+        
+      $pacbio_root/pbsv align \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+        ${RawBamSubreadscottens} \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/pacbio_VariantCaller/pacbio_ref_align_${name}.bam
+        
         ##lapraz
         RawBamSubreadscottens=/home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/1_8_La_praz_3_D02.tar.gz/m54073_171026_034928.subreads.bam 
     done
@@ -878,9 +1089,9 @@ for name in cottens lapraz
 for name in cottens lapraz
    do 
     $pacbio_root/pbsv call \
-        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
-        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam \
-        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/pacbio_VariantCaller/pacbio_variantCall_${name}.vcf 
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/pacbio_VariantCaller/pacbio_variantCall_${name}.vcf 
    done
 </code></pre>
 <div id="nucmer" class="section level4">
@@ -1165,6 +1376,14 @@ for name in cottens
 
    done
 </code></pre>
+</div>
+<div id="check-genome-assemblies" class="section level2">
+<h2>check Genome assemblies</h2>
+<p>Visual and manual inspection of assembled genome Workflow: Included tracks: - Pacbio minimap2 mapped reads - IlluminaMiSeq bwa mem mapped reads - Prokka genome annotation - sniffles variant call - Genious repeat analysis (on Michis machine) - GC extremes/content - illumina coverage dip When to exclude spurious mapping regions - Transposase or IS containing regions (potential insertions) - TA rich regions (Illumina has Problem) - Repeat regions - homopolymer (will be polished with Illumina).</p>
+<div class="figure">
+<img src="data:image/png;base64,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" alt="checking genomes assembly with Illumina data" />
+<p class="caption">checking genomes assembly with Illumina data</p>
+</div>
 </div>
 <div id="abruijn" class="section level2">
 <h2>Abruijn</h2>

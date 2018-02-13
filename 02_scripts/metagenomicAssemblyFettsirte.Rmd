@@ -106,6 +106,12 @@ echo 'pacbio_root=/home/bioinf/extradrv/opt/pacbio/smrtlink/smrtcmds/bin' >> $fi
 echo 'mauve_root=/home/bioinf/extradrv/mauve_snapshot_2015-02-13/linux-x64/' >> $file
 echo 'prokka_root=/home/bioinf/extradrv/prokka/bin/' >> $file
 echo 'Illumina_raw=/home/bioinf/bioinf_data/32_scmi/ReportMiSeqDani0102/input' >> $file
+echo 'rRNAdb=/home/bioinf/Downloads/sortmerna-2.1b/rRNA_databases/rfam5s_silva16s_silva23s_bac.fasta' >> $file
+echo 'rRNAdbindex=/home/bioinf/bioinf_data/43_sovi/Projects/Metagenomics_pipeline/Model_data/e_coli/04_trial_04/SortmeRNAindex/rfam5s_silva16s_silva23s_bac.idx' >> $file
+echo 'freebayes_root=/home/bioinf/extradrv/freebayes/bin' >> $file
+echo 'bcftools_root=/home/bioinf/extradrv/bcftools' >> $file
+
+
 
 
 
@@ -527,6 +533,49 @@ panphlan_pangenome_generation.py -c speciesname --i_gff prokka_gff/ -o database/
 
 ```
 
+##sortmeRNA
+
+
+```{bash sortmeRNA , eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##---------------- 
+##sortmeRNA of raw pacbio data
+##----------------
+for name in cottens lapraz
+   do
+    SECONDS=0
+    mkdir -p $DATA_ROOT/21_sortmeRNA/Pacbio_raw_${name}/
+    sortmerna --ref $rRNAdb,$rRNAdbindex \
+    --reads $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq --log -v \
+     --fastx --aligned $DATA_ROOT/21_sortmeRNA/Pacbio_raw_${name}/raw_pacbio_${name}_rRNA_aligned_rRNA_reads
+    echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
+    echo END = `date +"%Y-%m-%d %H:%M:%S"`
+   done
+ 
+##---------------- 
+##sortmeRNA of raw Illumina data
+##----------------
+
+##--------------first only for cottens----------------------------
+
+#for name in cottens lapraz
+#   do
+   name=cottens
+    SECONDS=0
+    mkdir -p $DATA_ROOT/21_sortmeRNA/Illumina_raw_${name}/
+    sortmerna --ref $rRNAdb,$rRNAdbindex \
+    --reads $DATA_ROOT/01_SMRTlink_data/cottensIllumina/all_Illumina_RawReads_cottens_cat.fastq --log -v \
+     --fastx --aligned $DATA_ROOT/21_sortmeRNA/Pacbio_raw_${name}/raw_illumina_${name}_rRNA_aligned_rRNA_reads
+    echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
+    echo END = `date +"%Y-%m-%d %H:%M:%S"`
+#   done
+   
+
+
+```
+
+
 ##mOTU taxonomic annotation
 In order to test the Metaphlan output we use a second well known taxonomic profiler for metagenomic datasets.
 However mOTU does not work with Pacbio data. mOTU was made only for short next generation sequencing technologies, specifically for Illumina, Ion Torrent or 454. 
@@ -570,10 +619,11 @@ name=cottens
     #mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/blast
     #SECONDS=0
     
-    LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads.txt|cut -f 1)
+    LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_subset_${date}.txt|cut -f 1)
     LineTrue=$(grep "$LastLine" -n $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta|awk -F":" '{print 758929-$1}')
+    date=20170202
     tail -$LineTrue $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta
-date=20170125
+
 
     $blast_root/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_subset_${date}.txt -evalue 0.01 -word_size 12
     echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
@@ -587,21 +637,21 @@ date=20170125
 #tail -367062 $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_${date}.fasta
 
 cp -r /home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db  /home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db_duplicate
-blast_root_michi=/home/bioinf/Software/blast_2_7_1/ncbi-blast-2.7.1+/bin/blast/blastn
+blast_root_michi=/home/bioinf/Software/blast_2_7_1/ncbi-blast-2.7.1+/bin
 DATA_ROOT=/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109
-aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db_dupliate
+aditiBlastDB=/home/bioinf/bioinf_archive/30_vaad_storage/BLASTDB/nt_db_duplicate/nt_db4
 
-
-date=20170125
+date_old=20170125
+date=20170202
 name=cottens
     #mkdir -p $DATA_ROOT/01_SMRTlink_data/${name}/blast
     #SECONDS=0
     
-    #LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads.txt|cut -f 1)
-    #LineTrue=$(grep "$LastLine" -n $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta|awk -F":" '{print 758929-$1}')
-    #tail -$LineTrue $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_${date}.fasta
+    LastLine=$(tail -1 $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_reverse_subset_${date_old}.txt|cut -f 1)
+    LineTrue=$(grep "$LastLine" -n $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_20170125.fasta|awk -F":" '{print 367062-$1}')
+    tail -$LineTrue $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_20170125.fasta > $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_michi_${date}.fasta
     
-    <!-- $blast_root_michi/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_master_michi_${date}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_reverse_subset_${date}.txt -evalue 0.01 -word_size 12 -->
+     $blast_root_michi/blastn -num_threads 16 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw_subset_michi_${date}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/01_SMRTlink_data/${name}/blast/${name}_blast_allRawReads_reverse_subset_${date}.txt -evalue 0.01 -word_size 12 
     #echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
     #echo END $name = `date +"%Y-%m-%d %H:%M:%S"`
   
@@ -795,108 +845,8 @@ for name in cottens lapraz
   
 ```
 
-
-####Blast assemblies
-In the following we blasted both the contigs.fasta aswell as the scaffolds.fasta file against the prokaryotic ncbi database
-```{bash blast_flye_assemblies ,eval=FALSE}
-source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-###-----------------
-##blast rawread flye scaffold assembly (entire procaryotic ncbi database)
-###-----------------
-
-for name in cottens lapraz
-   do
-     mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/{blast,rawReads2assembly_minimap2,rawReads2assembly_ngml}
-     blastn -num_threads 2 -max_hsps 1 -max_target_seqs 1 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
-   done
-
-###-----------------
-##blast min5000 flye assembly (entire procaryotic ncbi database)
-###-----------------
-
-for name in cottens lapraz
-   do
-     mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/{blast,rawReads2assembly_minimap2,rawReads2assembly_ngml}
-     blastn -num_threads 15 -max_hsps 10 -max_target_seqs 10 -task megablast -show_gis -query $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt -out $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/blast/blastAssemblyaginstScaffolds.txt -evalue 0.01 -word_size 64
-   done
-```
-
-
-####Minimap2 mapping of raw reads to the assemblies
-```{bash minmap2_rawreads_flye , eval=FALSE}
-source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-   
-##-------   
-##rawRead mappingminimap2 to rawRead Scaffolds assembly
-##-------   
-for name in cottens lapraz
-   do
-     ${minimap2_root} -t 12 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam - 
-   
-   done 
-
-##-------   
-##rawRead mappingminimap2 to min5000 Scaffolds assembly
-##-------   
-for name in cottens lapraz
-   do
-     ${minimap2_root} -t 12 -ax map-pb $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam - 
-   
-   done   
-   
-```
-
-
-####BamQC of flye assembly
-
-```{bash bamqc_flye, eval=FALSE} 
-source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
-
-##-------   
-##bamqc mappingminimap2 to rawRead assembly (scaffolds)
-##-------   
-for name in cottens lapraz
-   do
-      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds
-
-      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam > $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam
-      
-     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
-      
-      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds --java-mem-size=2G
-      
-      grep "Globals" -A 12  $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds/global_stats.txt
-      
-      grep "Coverage per contig" -A 1000  $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc/genome_results.txt > $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc/contig_stats.txt
- 
-      samtools index $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
-  done  
-  
-##-------   
-##bamqc mappingminimap2 to rawRead assembly (scaffolds)
-##-------   
-for name in cottens lapraz
-   do
-      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds
-
-      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam > $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam
-      
-     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
-      
-      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds --java-mem-size=2G
-      
-      grep "Globals" -A 12  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc_scaffolds/global_stats.txt
-      
-      grep "Coverage per contig" -A 1000  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc/genome_results.txt > $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/bamqc/contig_stats.txt
- 
-      samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
-  done   
-```
-
 ####Mapp Illumina Miseq reads to Pacbio assembly
-We have ran a MiSeq run for the two whee cultures (cottens and Lapraz). The reads are 300bp PE. In the following we map the raw reads to the pacbio sequence and flye assembled genomes. 
+We have ran a MiSeq run for the two whee cultures (cottens and Lapraz). The reads are 300bp PE. In the following we map the raw reads to the pacbio sequenced flye assembled genomes. 
 
 ```{bash IlluminaMapping, eval=FALSE}
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
@@ -927,6 +877,298 @@ samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_ref
 
 ```
 
+####freebayes polishing
+In the following we polish the pacbio assembled and arrow polished genome with the Illumina Miseq data. 
+This workflow goes as following:
+1. Variant calling based on pacbio genome and Illumina reads with freebayes.
+2. Integrating the called variants with bcftools
+
+
+```{bash freebayes_genome_polishing, eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------   
+##freebayes variant calling with Illumina data onto Pacbio polished genome
+##-------  
+
+for name in cottens lapraz
+   do 
+    SECONDS=0
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly
+    
+    $freebayes_root/freebayes -F 0.5 --min-coverage 8 -p 1 -f \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam > \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf
+    echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
+    echo END = `date +"%Y-%m-%d %H:%M:%S"`
+  done
+
+
+##-------   
+##bcftools variant integration of Illumina data into Pacbio polished genome
+##-------
+
+for name in cottens lapraz
+   do 
+    SECONDS=0
+    bgzip -c $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf > \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf.gz
+      
+    tabix -p vcf $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf.gz
+    
+    $bcftools_root/bcftools consensus -f $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
+      -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/variantCallsfreebayes.vcf.gz
+    echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
+    echo END = `date +"%Y-%m-%d %H:%M:%S"`
+   done
+
+```
+
+####Circlator
+
+Use Circlator to close the genomes and close the residual gap in the Streptococcus genome. 
+
+```{bash circulator, eval=FALSE}
+
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+###-----------------
+##Circlator all in one file with scaffold
+###-----------------
+for name in cottens lapraz
+   do 
+    SECONDS=0
+    
+    rm -r $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorAll/
+
+    export CIRCLATOR_SPADES=/home/bioinf/extradrv/SPAdes-3.7.1-Linux/bin/spades.py
+    
+    circlator all --threads 10 \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+      $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorAll
+
+    echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
+    echo END = `date +"%Y-%m-%d %H:%M:%S"`
+   done
+   
+   
+###-----------------
+##Circlator on all genomes individually
+###-----------------
+
+###-----------check conttens genomes------------
+name=cottens
+seq_length.py $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa
+less $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/blast/blastAssemblyaginstScaffolds.txt
+
+##---------------split files--------------
+cd $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/
+awk '/^>/{s=++d".fasta"} {print > s}' $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa
+cd $DATA_ROOT
+mv $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/1.fasta \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ldel.fasta
+mv $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/2.fasta \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Phage.fasta
+mv $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/3.fasta \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ster.fasta
+##---------------split scaffold--------------
+sed -E 's/([n])\1+/i/g' $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ster.fasta | sed 's/i$//g' |sed 's/i/>scaffold_3|arrow_02\n/g' > $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Sterm.fasta
+
+rm $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ster.fasta 
+
+##---------------Ldel circlator--------------
+
+    SECONDS=0
+    
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/
+
+    export CIRCLATOR_SPADES=/home/bioinf/extradrv/SPAdes-3.7.1-Linux/bin/spades.py
+    
+    circlator all --threads 5 \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Ldel.fasta \
+      $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/Ldel
+
+    echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
+    echo END = `date +"%Y-%m-%d %H:%M:%S"`
+
+
+##---------------Phage circlator--------------
+
+    SECONDS=0
+    
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/
+
+    export CIRCLATOR_SPADES=/home/bioinf/extradrv/SPAdes-3.7.1-Linux/bin/spades.py
+    
+    circlator all --threads 5 \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Phage.fasta \
+      $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/Phage
+
+    echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
+    echo END = `date +"%Y-%m-%d %H:%M:%S"`
+
+##---------------Sterm circlator--------------
+
+    SECONDS=0
+    
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/
+
+    export CIRCLATOR_SPADES=/home/bioinf/extradrv/SPAdes-3.7.1-Linux/bin/spades.py
+    
+    circlator all --threads 5 \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/Sterm.fasta \
+      $DATA_ROOT/01_SMRTlink_data/${name}/preassembled_reads/preads4falcon.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/circlatorSplit/Sterm
+
+    echo "RUNTIME (h:min:s)= $(($SECONDS / 3600)):$((($SECONDS / 60) % 60)):$(($SECONDS % 60))"
+    echo END = `date +"%Y-%m-%d %H:%M:%S"`  
+
+```
+
+
+####Blast assemblies
+In the following we blasted both the contigs.fasta aswell as the scaffolds.fasta file against the prokaryotic ncbi database
+```{bash blast_flye_assemblies ,eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+###-----------------
+##blast min5000 flye assembly (entire procaryotic ncbi database)
+###-----------------
+
+for name in cottens lapraz
+   do
+     mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/{blast,rawReads2assembly_minimap2,rawReads2assembly_ngmlr}
+     
+     blastn -num_threads 15 -max_hsps 10 -max_target_seqs 10 -task megablast -show_gis \
+     -query $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+     -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle slen" -db $aditiBlastDB/nt \
+     -out $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/blast/blastAssemblyaginstScaffolds.txt \
+     -evalue 0.01 -word_size 64
+   done
+```
+
+
+####Minimap2 mapping of raw reads to the assemblies
+```{bash minmap2_rawreads_flye , eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+   
+
+##-------   
+##rawRead mappingminimap2 to min5000 Scaffolds assembly
+##-------   
+for name in cottens lapraz
+   do
+     ${minimap2_root} -t 12 -ax map-pb \
+     $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+     $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM \
+     -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam - 
+   
+   done   
+   
+```
+
+
+####BamQC of flye assembly
+
+```{bash bamqc_flye, eval=FALSE} 
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------   
+##bamqc mappingminimap2 to rawRead assembly (scaffolds)
+##-------   
+for name in cottens lapraz
+   do
+      mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc_scaffolds
+
+      samtools view -b -f 4 $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam > $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_sorted_Scaffolds_unampped.bam
+      
+     # bedtools bamtofastq -i $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.bam -fq $DATA_ROOT/05_abruijn/${date}assembly_${name}/reads2assembly_align/aligned_sorted_unmapped.fastq
+      
+      $QUAL_ROOT/qualimap bamqc -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc_scaffolds --java-mem-size=2G
+      
+      grep "Globals" -A 12  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc_scaffolds/genome_results.txt |tail -11|sed '/^\s*$/d'|sed 's/=/\t/g'|sed -e 's/(.*%)//'|sed 's/,//g' > $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc_scaffolds/global_stats.txt
+      
+      grep "Coverage per contig" -A 1000  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc/genome_results.txt > $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/bamqc/contig_stats.txt
+ 
+      samtools index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_minimap2/raw_${name}_minimap2Mapped_Scaffolds_sorted.bam
+  done   
+```
+
+####Illumina reads mapping to genome assembly 
+
+```{bash IlluminaMapping_2, eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+###--------------
+##Cottens
+###--------------
+name=cottens
+mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/bamqc
+bwa index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa 
+bwa mem $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+  '<zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2_S3_L001_R1_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2-2_S6_L001_R1_001.fastq.gz' \
+  '<zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2_S3_L001_R2_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-2-2_S6_L001_R2_001.fastq.gz' \
+  -t 8 |samtools sort -@8 -O BAM \
+  -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam - | tee $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.log
+     
+$QUAL_ROOT/qualimap bamqc \
+   -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/bamqc --java-mem-size=2G
+    
+samtools index \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam
+
+###--------------
+##Lapraz
+###--------------
+name=lapraz
+mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/bamqc
+bwa index $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa
+bwa mem $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+  '<zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1_S9_L001_R1_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1-2_S12_L001_R1_001.fastq.gz' \
+  '<zcat /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1_S9_L001_R2_001.fastq.gz /home/bioinf/bioinf_archive/40_MiSeq_storage/do_not_touch/180129_M02824_0034_000000000-BK2J9/Data/Intensities/BaseCalls/P1761-3752-1-2_S12_L001_R2_001.fastq.gz' \
+  -t 8 |samtools sort -@8 -O BAM \
+  -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam - | tee $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.log
+     
+$QUAL_ROOT/qualimap bamqc \
+  -bam $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam -outdir $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/bamqc --java-mem-size=2G
+     
+samtools index \
+  $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/raw_IlluminaMapped_true/rawIllumina_${name}_bwamem_Scaffolds_sorted.bam
+
+```
+
+####control different assemblies with quast
+In the following we compare the genome assembly evolution. Here we compare the following assembly stages:
+1. flye assembly with flye polishing (mapping of reads with minimap2 and correcting)
+2. arrow polishing of assmebly with pacbio raw reads
+3. Freebayes polishing of Pacbio assembly with Illumina reads (Gold standard and therefore taken as Reference)
+
+```{bash quastComparisonAssemblies , eval=FALSE}
+source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
+
+##-------   
+##quast of genome assemblies
+##------- 
+
+for name in cottens lapraz
+   do
+    mkdir -p $DATA_ROOT/22_QuastAssemblyComparison/flye_arrow_freebayes_${name}
+    quast.py \
+      -t 8 -l "flyeAssembly,flyeAssembly_ArrowPolished" \
+      -R $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/fasta/scaffolds.fasta \
+      $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
+      -o $DATA_ROOT/22_QuastAssemblyComparison/flye_arrow_freebayes_${name}/
+   done
+
+
+```
+
 
 ####ngmlr/sniffles
 Ngmlr and sniffles are mappers which are well known to identify structural variation
@@ -935,25 +1177,18 @@ Ngmlr and sniffles are mappers which are well known to identify structural varia
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##-------   
-##NGMLR of rawreads
-##-------   
-for name in cottens lapraz
-   do
-#    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/rawReads2assembly_ngmlr/
-    $ngmlr_root/ngmlr -t 12 -r $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -q $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam - 
-  done
-  
-##-------   
 ##NGMLR of min5000
 ##-------   
 for name in cottens lapraz
    do
-#    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/rawReads2assembly_ngmlr/
-    $ngmlr_root/ngmlr -t 12 -r $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta -q $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq |samtools sort -@8 -O BAM -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam - 
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/
+    $ngmlr_root/ngmlr -t 12 \
+      -r $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+      -q $DATA_ROOT/01_SMRTlink_data/${name}/reads_${name}_raw.fastq \
+      |samtools sort -@8 -O BAM \
+      -o $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam - 
   done
     
-
-
 ```
 
 ##Structural Variation
@@ -963,22 +1198,14 @@ In a previous step we observed that most likely we will not have major repeats w
 source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/02_scripts/fileShortcuts.sh
 
 ##-------   
-##sniffles of rawreads
-##-------   
-for name in cottens lapraz
-   do
-    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/sniffles
-    $sniffles_root/sniffles -t 10 -m $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam -v $DATA_ROOT/15_flye/assembly_${name}_raw/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw.vcf
-
-  done
-
-##-------   
 ##sniffles of min5000
 ##-------   
 for name in cottens lapraz
    do
-    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/sniffles
-    $sniffles_root/sniffles -t 10 -m $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam -v $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw_min5000.vcf
+    mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/sniffles
+    $sniffles_root/sniffles -t 10 \
+      -m $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam \
+      -v $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/sniffles/sniffles_${name}_raw_min5000.vcf
 
   done
 
@@ -998,9 +1225,15 @@ source /home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run2017110
 RawBamSubreadscottens=/home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/2_7_Cottens_4_E02.tar.gz/m54073_171026_135911.subreads.bam
 for name in cottens lapraz
    do 
-       mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/pacbio_VariantCaller/
-          samtools faidx $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta
-      $pacbio_root/pbsv align $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta ${RawBamSubreadscottens} $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/pacbio_VariantCaller/pacbio_ref_align_${name}.bam
+       mkdir -p $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/pacbio_VariantCaller/
+       
+       #samtools faidx $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa
+        
+      $pacbio_root/pbsv align \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+        ${RawBamSubreadscottens} \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/pacbio_VariantCaller/pacbio_ref_align_${name}.bam
+        
         ##lapraz
         RawBamSubreadscottens=/home/bioinf/bioinf_archive/32_scmi_storage/archivePacBio/fettsirte1_02112017/scratch/pacbio_tmp/tmpWL3QGn/1_8_La_praz_3_D02.tar.gz/m54073_171026_034928.subreads.bam 
     done
@@ -1009,9 +1242,9 @@ for name in cottens lapraz
 for name in cottens lapraz
    do 
     $pacbio_root/pbsv call \
-        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/assembly/reference_${name}.fasta \
-        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam \
-        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/pacbio_VariantCaller/pacbio_variantCall_${name}.vcf 
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/freebayesPolishedAssembly/polished_${name}_polishedIllumina.fa \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/rawReads2assembly_ngmlr/raw_${name}_ngmlrMapped_Scaffolds_sorted.bam \
+        $DATA_ROOT/15_flye/assembly_${name}_min5000/SmrtLink_polished_reference_arrow/freebayes_illumina_polished/pacbio_VariantCaller/pacbio_variantCall_${name}.vcf 
    done
 
 
@@ -1359,6 +1592,23 @@ for name in cottens
 
 ```
 
+##check Genome assemblies
+Visual and manual inspection of assembled genome Workflow:
+Included tracks:
+- Pacbio minimap2 mapped reads 
+- IlluminaMiSeq bwa mem mapped reads
+- Prokka genome annotation
+- sniffles variant call
+- Genious repeat analysis (on Michis machine)
+- GC extremes/content
+- illumina coverage dip
+When to exclude spurious mapping regions
+- Transposase or IS containing regions (potential insertions)
+- TA rich regions (Illumina has Problem)
+- Repeat regions
+- homopolymer (will be polished with Illumina).
+
+![checking genomes assembly with Illumina data](/home/bioinf/bioinf_archive/43_sovi_storage/Projects/Fettsirte/Run20171109/99_Extras/genomeQualityControl_Illumina.png)
 
 
 ##Abruijn

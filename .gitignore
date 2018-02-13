@@ -20,3 +20,5 @@ reads_fastqc/
 18_NCBIGenomes/
 19_mauve/
 20_genbankDB/
+21_sortmeRNA/
+22_QuastAssemblyComparison/
